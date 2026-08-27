@@ -8,6 +8,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -98,7 +99,7 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
-        ServerWorld world = server.getWorld(activeRound.world.getRegistryKey());
+        ServerWorld world = server.getWorld(activeRound.worldKey);
         if (world == null) {
             stop(server, "<red>The active painting world is no longer available. Ending the round.</red>");
             return;
@@ -239,7 +240,7 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
-        ServerWorld world = server.getWorld(activeRound.world.getRegistryKey());
+        ServerWorld world = server.getWorld(activeRound.worldKey);
         if (world == null) {
             return;
         }
@@ -255,7 +256,7 @@ public final class SmearglesPixelArtManager {
     }
 
     private static final class ActiveRound {
-        private final ServerWorld world;
+        private final RegistryKey<World> worldKey;
         private final BlockPos origin;
         private final PixelArtTemplate template;
         private final java.util.List<PixelArtTemplate.BlockPlacement> revealOrder;
@@ -265,7 +266,7 @@ public final class SmearglesPixelArtManager {
         private UUID artistEntityId;
 
         private ActiveRound(ServerWorld world, BlockPos origin, PixelArtTemplate template) {
-            this.world = world;
+            this.worldKey = world.getRegistryKey();
             this.origin = origin;
             this.template = template;
             this.revealOrder = template.revealOrder();

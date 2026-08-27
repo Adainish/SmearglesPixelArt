@@ -15,34 +15,38 @@ public final class SmearglesPixelArtCommands {
         dispatcher.register(CommandManager.literal("smearglespixelart")
             .requires(source -> source.hasPermissionLevel(2))
             .then(CommandManager.literal("start")
-                .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
-                    .executes(context -> {
-                        boolean started = SmearglesPixelArtMod.getManager().startRandom(
-                            context.getSource().getWorld(),
-                            BlockPosArgumentType.getBlockPos(context, "pos")
-                        );
-                        if (!started) {
-                            context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"), false);
-                            return 0;
-                        }
-                        return 1;
-                    })
-                )
-                .then(CommandManager.argument("template", StringArgumentType.word())
-                    .suggests((context, builder) -> CommandSource.suggestMatching(SmearglesPixelArtMod.getManager().templateNames(), builder))
+                .then(CommandManager.literal("random")
                     .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
                         .executes(context -> {
-                            boolean started = SmearglesPixelArtMod.getManager().startTemplate(
+                            boolean started = SmearglesPixelArtMod.getManager().startRandom(
                                 context.getSource().getWorld(),
-                                BlockPosArgumentType.getBlockPos(context, "pos"),
-                                StringArgumentType.getString(context, "template")
+                                BlockPosArgumentType.getBlockPos(context, "pos")
                             );
                             if (!started) {
-                                context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>That template was not found, or a round is already active.</red>"), false);
+                                context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"), false);
                                 return 0;
                             }
                             return 1;
                         })
+                    )
+                )
+                .then(CommandManager.literal("template")
+                    .then(CommandManager.argument("template", StringArgumentType.word())
+                        .suggests((context, builder) -> CommandSource.suggestMatching(SmearglesPixelArtMod.getManager().templateNames(), builder))
+                        .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
+                            .executes(context -> {
+                                boolean started = SmearglesPixelArtMod.getManager().startTemplate(
+                                    context.getSource().getWorld(),
+                                    BlockPosArgumentType.getBlockPos(context, "pos"),
+                                    StringArgumentType.getString(context, "template")
+                                );
+                                if (!started) {
+                                    context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>That template was not found, or a round is already active.</red>"), false);
+                                    return 0;
+                                }
+                                return 1;
+                            })
+                        )
                     )
                 )
             )
