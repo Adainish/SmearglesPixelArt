@@ -82,3 +82,26 @@ The finished project should support:
 - accepting player guesses through `/guess <pokemon>`,
 - determining the first correct guess,
 - announcing the result with MiniMessage text.
+
+## 8. Current Implementation
+
+This repository now contains an initial server-side Fabric sidemod implementation that targets Cobblemon 1.7.0 on Minecraft 1.21.1.
+
+### Admin commands
+
+- `/smearglespixelart start <pos>` starts a round with a random built-in template.
+- `/smearglespixelart start <template> <pos>` starts a round with a specific built-in template.
+- `/smearglespixelart list` shows available built-in templates.
+- `/smearglespixelart status` shows current round progress.
+- `/smearglespixelart stop` stops the active round.
+
+### Player command
+
+- `/guess <pokemon>` submits a guess for the active round.
+
+### Built-in templates
+
+- `pikachu`
+- `voltorb`
+
+The block position supplied to the start command is the bottom-left origin of the vertical pixel-art canvas.
