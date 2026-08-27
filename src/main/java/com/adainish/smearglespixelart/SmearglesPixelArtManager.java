@@ -1,7 +1,6 @@
 package com.adainish.smearglespixelart;
 
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
@@ -240,7 +239,12 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
-        Entity entity = server.getWorld(activeRound.world.getRegistryKey()).getEntity(activeRound.artistEntityId);
+        ServerWorld world = server.getWorld(activeRound.world.getRegistryKey());
+        if (world == null) {
+            return;
+        }
+
+        Entity entity = world.getEntity(activeRound.artistEntityId);
         if (entity != null) {
             entity.discard();
         }
