@@ -98,7 +98,11 @@ public final class SpriteTemplateRecorder {
             boolean sameX = first.getX() == second.getX();
             boolean sameZ = first.getZ() == second.getZ();
 
-            if (sameX == sameZ) {
+            if (sameX && sameZ) {
+                throw new IllegalArgumentException("2D sprite selections must span more than one block horizontally.");
+            }
+
+            if (!sameX && !sameZ) {
                 throw new IllegalArgumentException("2D sprite selections must keep either X or Z constant.");
             }
 
