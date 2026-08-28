@@ -11,25 +11,26 @@ class SmeargleFrustrationSequenceTest {
     @Test
     void startsStillThenWalksTowardAudience() {
         List<SmeargleFrustrationSequence.Step> steps = SmeargleFrustrationSequence.stepsForStage(1);
+        int pause = SmeargleFrustrationSequence.PAUSE_TICKS;
 
-        assertTrue(steps.size() >= 34);
+        assertTrue(steps.size() >= 60);
         assertEquals(0.0D, steps.getFirst().forwardOffset());
         assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.getFirst().facingMode());
-        assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.get(1).facingMode());
-        assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.get(3).facingMode());
-        assertEquals(SmeargleFrustrationSequence.FacingMode.AUDIENCE, steps.get(4).facingMode());
-        assertEquals(0.0D, steps.get(4).forwardOffset());
-        assertEquals(SmeargleFrustrationSequence.FacingMode.AUDIENCE, steps.get(7).facingMode());
-        assertEquals(0.0D, steps.get(7).forwardOffset());
-        assertTrue(steps.get(8).forwardOffset() > steps.get(7).forwardOffset());
-        assertTrue(steps.get(9).forwardOffset() > steps.get(8).forwardOffset());
-        assertTrue(steps.get(10).forwardOffset() > steps.get(9).forwardOffset());
-        assertEquals(steps.get(12), steps.get(13));
+        assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.get(pause - 1).facingMode());
+        assertEquals(SmeargleFrustrationSequence.FacingMode.AUDIENCE, steps.get(pause).facingMode());
+        assertEquals(0.0D, steps.get(pause).forwardOffset());
+        assertEquals(SmeargleFrustrationSequence.FacingMode.AUDIENCE, steps.get((pause * 2) - 1).facingMode());
+        assertEquals(0.0D, steps.get((pause * 2) - 1).forwardOffset());
+        assertTrue(steps.get(pause * 2).forwardOffset() > steps.get((pause * 2) - 1).forwardOffset());
+        assertTrue(steps.get((pause * 2) + 1).forwardOffset() > steps.get(pause * 2).forwardOffset());
+        assertTrue(steps.get((pause * 2) + 2).forwardOffset() > steps.get((pause * 2) + 1).forwardOffset());
+        assertEquals(steps.get((pause * 2) + 4), steps.get((pause * 2) + 5));
     }
 
     @Test
     void looksBackAndEndsReadyToPaintAgain() {
         List<SmeargleFrustrationSequence.Step> steps = SmeargleFrustrationSequence.stepsForStage(1);
+        int pause = SmeargleFrustrationSequence.PAUSE_TICKS;
 
         int lookBackIndex = -1;
         for (int index = 0; index < steps.size(); index++) {
@@ -41,13 +42,17 @@ class SmeargleFrustrationSequenceTest {
         }
 
         assertTrue(lookBackIndex > 0);
-        assertTrue(steps.size() > lookBackIndex + 5);
+        assertTrue(steps.size() > lookBackIndex + pause);
         double lookBackOffset = steps.get(lookBackIndex).forwardOffset();
         assertEquals(steps.get(lookBackIndex), steps.get(lookBackIndex + 1));
         assertEquals(steps.get(lookBackIndex + 1), steps.get(lookBackIndex + 2));
         assertTrue(steps.stream().skip(lookBackIndex + 1).anyMatch(step -> step.facingMode() == SmeargleFrustrationSequence.FacingMode.ART && step.forwardOffset() < lookBackOffset));
-        double retreatFloor = steps.get(lookBackIndex + 4).forwardOffset();
-        double surgePeak = steps.subList(lookBackIndex + 5, steps.size()).stream()
+        double retreatFloor = steps.subList(lookBackIndex, steps.size()).stream()
+            .filter(step -> step.facingMode() == SmeargleFrustrationSequence.FacingMode.ART)
+            .mapToDouble(SmeargleFrustrationSequence.Step::forwardOffset)
+            .min()
+            .orElse(0.0D);
+        double surgePeak = steps.subList(lookBackIndex + pause, steps.size()).stream()
             .mapToDouble(SmeargleFrustrationSequence.Step::forwardOffset)
             .max()
             .orElse(0.0D);

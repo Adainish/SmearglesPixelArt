@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class SmeargleFrustrationSequence {
-    private static final int PAUSE_TICKS = 4;
+    static final int PAUSE_TICKS = 8;
 
     private SmeargleFrustrationSequence() {
     }
