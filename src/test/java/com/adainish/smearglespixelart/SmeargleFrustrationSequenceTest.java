@@ -12,7 +12,7 @@ class SmeargleFrustrationSequenceTest {
     void startsStillThenWalksTowardAudience() {
         List<SmeargleFrustrationSequence.Step> steps = SmeargleFrustrationSequence.stepsForStage(1);
 
-        assertTrue(steps.size() >= 20);
+        assertTrue(steps.size() >= 19);
         assertEquals(0.0D, steps.getFirst().forwardOffset());
         assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.getFirst().facingMode());
         assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.get(1).facingMode());
@@ -39,6 +39,7 @@ class SmeargleFrustrationSequenceTest {
         }
 
         assertTrue(lookBackIndex > 0);
+        assertTrue(steps.size() > lookBackIndex + 5);
         assertTrue(steps.get(lookBackIndex + 1).forwardOffset() < steps.get(lookBackIndex).forwardOffset());
         double retreatFloor = steps.get(lookBackIndex + 4).forwardOffset();
         double surgePeak = steps.subList(lookBackIndex + 5, steps.size()).stream()

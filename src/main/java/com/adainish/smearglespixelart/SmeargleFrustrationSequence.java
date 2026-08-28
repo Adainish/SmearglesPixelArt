@@ -49,7 +49,6 @@ final class SmeargleFrustrationSequence {
         steps.add(step(clampedStage >= 3 ? 2.1D : 1.85D, FacingMode.AUDIENCE, clampedStage >= 2, true));
         steps.add(step(1.25D, FacingMode.AUDIENCE, false, clampedStage >= 2));
         steps.add(step(0.0D, FacingMode.ART));
-        steps.add(step(0.0D, FacingMode.ART));
 
         return List.copyOf(steps);
     }
