@@ -9,4 +9,11 @@ class SmearglesPixelArtManagerTest {
     void usesFiveSecondCleanupDelay() {
         assertEquals(20 * 5, SmearglesPixelArtManager.CLEANUP_DELAY_TICKS);
     }
+
+    @Test
+    void cleanupRunsFasterThanPainting() {
+        assertEquals(10, SmeargleCleanupPacing.ticksPerPlacement(20));
+        assertEquals(1, SmeargleCleanupPacing.ticksPerPlacement(1));
+        assertEquals(1, SmeargleCleanupPacing.ticksPerPlacement(3));
+    }
 }

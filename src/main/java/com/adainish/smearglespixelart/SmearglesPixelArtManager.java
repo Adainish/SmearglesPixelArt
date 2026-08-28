@@ -203,12 +203,12 @@ public final class SmearglesPixelArtManager {
 
             PixelArtTemplate.BlockPlacement placement = activeRound.cleanupOrder.get(activeRound.nextCleanupIndex);
             if (!prepareSmeargleForPlacement(world, activeRound.origin, placement)) {
-                activeRound.cooldownTicks = activeRound.ticksPerPlacement;
+                activeRound.cooldownTicks = activeRound.cleanupTicksPerPlacement;
                 return;
             }
             placeBlock(world, activeRound.direction.transform(activeRound.origin, placement), "minecraft:air");
             activeRound.nextCleanupIndex++;
-            activeRound.cooldownTicks = activeRound.ticksPerPlacement;
+            activeRound.cooldownTicks = activeRound.cleanupTicksPerPlacement;
             return;
         }
 
@@ -609,6 +609,7 @@ public final class SmearglesPixelArtManager {
         private final java.util.List<PixelArtTemplate.BlockPlacement> revealOrder;
         private final java.util.List<PixelArtTemplate.BlockPlacement> cleanupOrder;
         private final int ticksPerPlacement;
+        private final int cleanupTicksPerPlacement;
         private RoundPhase phase;
         private int nextPlacementIndex;
         private int nextCleanupIndex;
@@ -635,6 +636,7 @@ public final class SmearglesPixelArtManager {
             this.revealOrder = template.revealOrder();
             this.cleanupOrder = this.revealOrder.reversed();
             this.ticksPerPlacement = ticksPerPlacement;
+            this.cleanupTicksPerPlacement = SmeargleCleanupPacing.ticksPerPlacement(ticksPerPlacement);
             this.cooldownTicks = ticksPerPlacement;
             this.phase = RoundPhase.PAINTING;
         }
