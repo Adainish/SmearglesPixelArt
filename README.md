@@ -126,8 +126,10 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 - Edit `config/smearglespixelart/config.json` to choose:
   - the target dimension id,
   - the canvas origin,
+  - the canvas direction,
   - the number of ticks Smeargle waits between block placements.
 - Slower painting can be achieved by increasing `ticksPerPlacement`.
+- Supported directions include cardinals and diagonals such as `north`, `east`, `southwest`, and `northwest`.
 
 ### Built-in templates
 

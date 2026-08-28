@@ -18,10 +18,12 @@ import net.minecraft.world.World;
 public final class SmearglesPixelArtConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String DEFAULT_DIMENSION = "minecraft:overworld";
+    private static final String DEFAULT_DIRECTION = "north";
     private static final int DEFAULT_CANVAS_Y = 80;
     private static final int DEFAULT_TICKS_PER_PLACEMENT = 20;
 
     private String dimension = DEFAULT_DIMENSION;
+    private String direction = DEFAULT_DIRECTION;
     private CanvasOrigin canvasOrigin = new CanvasOrigin();
     private int ticksPerPlacement = DEFAULT_TICKS_PER_PLACEMENT;
 
@@ -70,6 +72,10 @@ public final class SmearglesPixelArtConfig {
         return new BlockPos(origin.x, origin.y, origin.z);
     }
 
+    public CanvasDirection direction() {
+        return CanvasDirection.parse(this.direction);
+    }
+
     public int ticksPerPlacement() {
         return Math.max(1, this.ticksPerPlacement);
     }
@@ -78,6 +84,7 @@ public final class SmearglesPixelArtConfig {
         if (Identifier.tryParse(this.dimension) == null) {
             this.dimension = DEFAULT_DIMENSION;
         }
+        this.direction = CanvasDirection.parse(this.direction).id();
         if (this.canvasOrigin == null) {
             this.canvasOrigin = new CanvasOrigin();
         }

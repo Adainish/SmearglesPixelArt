@@ -68,7 +68,8 @@ public final class SmearglesPixelArtManager {
                 "<gray>No active Smeargle round.</gray> <gray>Configured canvas:</gray> <aqua>"
                     + MiniMessageText.escape(configuredCanvas.dimensionId()) + "</aqua> <yellow>"
                     + configuredCanvas.origin().getX() + " " + configuredCanvas.origin().getY() + " " + configuredCanvas.origin().getZ()
-                    + "</yellow> <gray>at</gray> <gold>" + configuredCanvas.ticksPerPlacement() + "</gold> <gray>ticks per block.</gray>"
+                    + "</yellow> <gray>facing</gray> <gold>" + MiniMessageText.escape(configuredCanvas.direction().id()) + "</gold>"
+                    + " <gray>at</gray> <gold>" + configuredCanvas.ticksPerPlacement() + "</gold> <gray>ticks per block.</gray>"
             );
         }
 
@@ -84,6 +85,7 @@ public final class SmearglesPixelArtManager {
             phaseDetails
                 + " <gray>Canvas:</gray> <aqua>" + MiniMessageText.escape(activeRound.dimensionId) + "</aqua> <yellow>"
                 + activeRound.origin.getX() + " " + activeRound.origin.getY() + " " + activeRound.origin.getZ() + "</yellow>"
+                + " <gray>facing</gray> <gold>" + MiniMessageText.escape(activeRound.direction.id()) + "</gold>"
                 + " <gray>at</gray> <gold>" + activeRound.ticksPerPlacement + "</gold> <gray>ticks per block.</gray>"
         );
     }
@@ -186,7 +188,7 @@ public final class SmearglesPixelArtManager {
             }
 
             PixelArtTemplate.BlockPlacement placement = activeRound.cleanupOrder.get(activeRound.nextCleanupIndex);
-            placeBlock(world, activeRound.origin.add(placement.x(), placement.y(), placement.z()), "minecraft:air");
+            placeBlock(world, activeRound.direction.transform(activeRound.origin, placement), "minecraft:air");
             activeRound.nextCleanupIndex++;
             moveSmeargle(world, activeRound.origin, placement);
             activeRound.cooldownTicks = activeRound.ticksPerPlacement;
@@ -203,7 +205,7 @@ public final class SmearglesPixelArtManager {
         }
 
         PixelArtTemplate.BlockPlacement placement = activeRound.revealOrder.get(activeRound.nextPlacementIndex);
-        placeBlock(world, activeRound.origin.add(placement.x(), placement.y(), placement.z()), placement.blockId());
+        placeBlock(world, activeRound.direction.transform(activeRound.origin, placement), placement.blockId());
         activeRound.nextPlacementIndex++;
         moveSmeargle(world, activeRound.origin, placement);
         activeRound.cooldownTicks = activeRound.ticksPerPlacement;
@@ -252,14 +254,14 @@ public final class SmearglesPixelArtManager {
         ServerWorld world = configuredCanvas.world();
         BlockPos canvasOrigin = configuredCanvas.origin().toImmutable();
         CanvasKey canvasKey = new CanvasKey(world.getRegistryKey(), canvasOrigin);
-        CanvasFootprint nextFootprint = CanvasFootprint.of(template);
+        CanvasFootprint nextFootprint = CanvasFootprint.of(template, configuredCanvas.direction());
         CanvasFootprint clearFootprint = Optional.ofNullable(canvasFootprints.get(canvasKey))
             .map(existing -> existing.covering(nextFootprint))
             .orElse(nextFootprint);
 
         clearCanvas(world, canvasOrigin, clearFootprint);
         canvasFootprints.put(canvasKey, nextFootprint);
-        activeRound = new ActiveRound(world, configuredCanvas.dimensionId(), canvasOrigin, template, configuredCanvas.ticksPerPlacement());
+        activeRound = new ActiveRound(world, configuredCanvas.dimensionId(), configuredCanvas.direction(), canvasOrigin, template, configuredCanvas.ticksPerPlacement());
         activeRound.artistEntityId = spawnSmeargle(world, canvasOrigin);
 
         broadcast(
@@ -293,9 +295,9 @@ public final class SmearglesPixelArtManager {
     }
 
     private void clearCanvas(ServerWorld world, BlockPos origin, CanvasFootprint footprint) {
-        for (int x = 0; x <= footprint.maxX(); x++) {
-            for (int y = 0; y <= footprint.maxY(); y++) {
-                for (int z = 0; z <= footprint.maxZ(); z++) {
+        for (int x = footprint.minX(); x <= footprint.maxX(); x++) {
+            for (int y = footprint.minY(); y <= footprint.maxY(); y++) {
+                for (int z = footprint.minZ(); z <= footprint.maxZ(); z++) {
                     world.setBlockState(origin.add(x, y, z), Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
                 }
             }
@@ -328,7 +330,13 @@ public final class SmearglesPixelArtManager {
             entity.setCustomName(Text.literal("Smeargle"));
             entity.setCustomNameVisible(true);
             entity.setInvulnerable(true);
-            entity.refreshPositionAndAngles(origin.getX() + 0.5D, origin.getY(), origin.getZ() + 1.5D, 180.0F, 0.0F);
+            entity.refreshPositionAndAngles(
+                activeRound != null ? activeRound.direction.artistX(origin) : origin.getX() + 0.5D,
+                origin.getY(),
+                activeRound != null ? activeRound.direction.artistZ(origin) : origin.getZ() + 1.5D,
+                activeRound != null ? activeRound.direction.yaw() : 180.0F,
+                0.0F
+            );
             if (world.spawnEntity(entity)) {
                 return entity.getUuid();
             }
@@ -348,11 +356,12 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
+        BlockPos blockPos = activeRound.direction.transform(origin, placement);
         entity.refreshPositionAndAngles(
-            origin.getX() + placement.x() + 0.5D,
+            activeRound.direction.artistX(blockPos),
             origin.getY() + Math.max(placement.y() - 1, 0),
-            origin.getZ() + 1.5D,
-            180.0F,
+            activeRound.direction.artistZ(blockPos),
+            activeRound.direction.yaw(),
             0.0F
         );
     }
@@ -387,7 +396,7 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
-        clearCanvas(world, activeRound.origin, CanvasFootprint.of(activeRound.template));
+        clearCanvas(world, activeRound.origin, CanvasFootprint.of(activeRound.template, activeRound.direction));
     }
 
     @Nullable
@@ -397,12 +406,13 @@ public final class SmearglesPixelArtManager {
         if (world == null) {
             return null;
         }
-        return new ConfiguredCanvas(world, config.dimension(), config.canvasOrigin(), config.ticksPerPlacement());
+        return new ConfiguredCanvas(world, config.dimension(), config.direction(), config.canvasOrigin(), config.ticksPerPlacement());
     }
 
     private static final class ActiveRound {
         private final RegistryKey<World> worldKey;
         private final String dimensionId;
+        private final CanvasDirection direction;
         private final BlockPos origin;
         private final PixelArtTemplate template;
         private final java.util.List<PixelArtTemplate.BlockPlacement> revealOrder;
@@ -418,9 +428,10 @@ public final class SmearglesPixelArtManager {
         @Nullable
         private UUID artistEntityId;
 
-        private ActiveRound(ServerWorld world, String dimensionId, BlockPos origin, PixelArtTemplate template, int ticksPerPlacement) {
+        private ActiveRound(ServerWorld world, String dimensionId, CanvasDirection direction, BlockPos origin, PixelArtTemplate template, int ticksPerPlacement) {
             this.worldKey = world.getRegistryKey();
             this.dimensionId = dimensionId;
+            this.direction = direction;
             this.origin = origin;
             this.template = template;
             this.revealOrder = template.revealOrder();
@@ -441,7 +452,7 @@ public final class SmearglesPixelArtManager {
         CONFIGURED_DIMENSION_UNAVAILABLE
     }
 
-    private record ConfiguredCanvas(ServerWorld world, String dimensionId, BlockPos origin, int ticksPerPlacement) {
+    private record ConfiguredCanvas(ServerWorld world, String dimensionId, CanvasDirection direction, BlockPos origin, int ticksPerPlacement) {
     }
 
     private record CanvasKey(RegistryKey<World> worldKey, BlockPos origin) {

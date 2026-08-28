@@ -19,6 +19,7 @@ class SmearglesPixelArtConfigTest {
 
         assertTrue(Files.exists(path));
         assertEquals("minecraft:overworld", config.dimension());
+        assertEquals(CanvasDirection.NORTH, config.direction());
         assertEquals(new BlockPos(0, 80, 0), config.canvasOrigin());
         assertEquals(20, config.ticksPerPlacement());
     }
@@ -31,6 +32,7 @@ class SmearglesPixelArtConfigTest {
             """
             {
               "dimension": "not a valid id",
+              "direction": "north-west",
               "canvasOrigin": {
                 "x": 12,
                 "y": 64,
@@ -44,6 +46,7 @@ class SmearglesPixelArtConfigTest {
         SmearglesPixelArtConfig config = SmearglesPixelArtConfig.load(path);
 
         assertEquals("minecraft:overworld", config.dimension());
+        assertEquals(CanvasDirection.NORTHWEST, config.direction());
         assertEquals(new BlockPos(12, 64, -8), config.canvasOrigin());
         assertEquals(1, config.ticksPerPlacement());
     }
