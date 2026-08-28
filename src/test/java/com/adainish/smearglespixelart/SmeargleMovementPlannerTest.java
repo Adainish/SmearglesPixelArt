@@ -126,4 +126,28 @@ class SmeargleMovementPlannerTest {
         assertEquals(Set.of(new BlockPos(12, 67, 9)), frame.supportToRemove());
         assertFalse(frame.readyToPaint());
     }
+
+    @Test
+    void groundsElevatedSmeargleOneStepAtATimeForFrustration() {
+        BlockPos anchor = new BlockPos(12, 67, 9);
+        SmeargleSupportColumn groundedColumn = SmeargleSupportColumn.forAnchor(anchor, 64, 64);
+
+        SmeargleMovementPlanner.MovementFrame frame = SmeargleMovementPlanner.nextFrame(
+            anchor,
+            67,
+            Set.of(
+                new BlockPos(12, 64, 9),
+                new BlockPos(12, 65, 9),
+                new BlockPos(12, 66, 9)
+            ),
+            groundedColumn,
+            64
+        );
+
+        assertEquals(anchor, frame.anchor());
+        assertEquals(66, frame.standingY());
+        assertEquals(Set.of(), frame.supportToAdd());
+        assertEquals(Set.of(new BlockPos(12, 66, 9)), frame.supportToRemove());
+        assertFalse(frame.readyToPaint());
+    }
 }

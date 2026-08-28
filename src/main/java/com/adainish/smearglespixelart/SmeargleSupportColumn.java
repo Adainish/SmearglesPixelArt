@@ -19,9 +19,12 @@ final class SmeargleSupportColumn {
     static SmeargleSupportColumn forPlacement(CanvasDirection direction, BlockPos origin, PixelArtTemplate.BlockPlacement placement) {
         BlockPos targetBlock = direction.transform(origin, placement);
         BlockPos anchor = direction.supportAnchor(targetBlock);
-        int standingY = targetBlock.getY();
+        return forAnchor(anchor, targetBlock.getY(), origin.getY());
+    }
+
+    static SmeargleSupportColumn forAnchor(BlockPos anchor, int standingY, int baseY) {
         Set<BlockPos> supportBlocks = new LinkedHashSet<>();
-        for (int y = origin.getY(); y < standingY; y++) {
+        for (int y = baseY; y < standingY; y++) {
             supportBlocks.add(new BlockPos(anchor.getX(), y, anchor.getZ()));
         }
         return new SmeargleSupportColumn(anchor, standingY, supportBlocks);

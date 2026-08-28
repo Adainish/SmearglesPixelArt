@@ -376,6 +376,11 @@ public final class SmearglesPixelArtManager {
     }
 
     private boolean prepareSmeargleForPlacement(ServerWorld world, BlockPos origin, PixelArtTemplate.BlockPlacement placement) {
+        SmeargleSupportColumn supportColumn = SmeargleSupportColumn.forPlacement(activeRound.direction, origin, placement);
+        return moveSmeargleTowardColumn(world, supportColumn, activeRound.direction.yaw());
+    }
+
+    private boolean moveSmeargleTowardColumn(ServerWorld world, SmeargleSupportColumn targetColumn, float yaw) {
         if (activeRound == null || activeRound.artistEntityId == null) {
             return true;
         }
@@ -385,13 +390,12 @@ public final class SmearglesPixelArtManager {
             return true;
         }
 
-        SmeargleSupportColumn supportColumn = SmeargleSupportColumn.forPlacement(activeRound.direction, origin, placement);
         SmeargleMovementPlanner.MovementFrame frame = SmeargleMovementPlanner.nextFrame(
             activeRound.currentSupportAnchor,
             activeRound.currentStandingY,
             activeRound.temporarySupportBlocks,
-            supportColumn,
-            origin.getY()
+            targetColumn,
+            activeRound.origin.getY()
         );
         updateTemporarySupport(world, frame.supportToRemove(), false);
         updateTemporarySupport(world, frame.supportToAdd(), true);
@@ -401,7 +405,7 @@ public final class SmearglesPixelArtManager {
             activeRound.direction.artistX(frame.anchor()),
             activeRound.direction.artistY(frame.standingY()),
             activeRound.direction.artistZ(frame.anchor()),
-            activeRound.direction.yaw(),
+            yaw,
             0.0F
         );
         return frame.readyToPaint();
@@ -427,6 +431,16 @@ public final class SmearglesPixelArtManager {
 
     private void tickAngerReaction(ServerWorld world) {
         if (activeRound == null || activeRound.phase != RoundPhase.ANGER_REACTION) {
+            return;
+        }
+
+        if (activeRound.currentSupportAnchor != null && activeRound.currentStandingY > activeRound.origin.getY()) {
+            SmeargleSupportColumn groundedColumn = SmeargleSupportColumn.forAnchor(
+                activeRound.currentSupportAnchor,
+                activeRound.origin.getY(),
+                activeRound.origin.getY()
+            );
+            moveSmeargleTowardColumn(world, groundedColumn, activeRound.direction.yaw());
             return;
         }
 

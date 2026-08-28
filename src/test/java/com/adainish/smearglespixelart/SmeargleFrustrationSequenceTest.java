@@ -12,7 +12,7 @@ class SmeargleFrustrationSequenceTest {
     void startsStillThenWalksTowardAudience() {
         List<SmeargleFrustrationSequence.Step> steps = SmeargleFrustrationSequence.stepsForStage(1);
 
-        assertTrue(steps.size() >= 19);
+        assertTrue(steps.size() >= 24);
         assertEquals(0.0D, steps.getFirst().forwardOffset());
         assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.getFirst().facingMode());
         assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.get(1).facingMode());
@@ -23,6 +23,7 @@ class SmeargleFrustrationSequenceTest {
         assertTrue(steps.get(4).forwardOffset() > steps.get(3).forwardOffset());
         assertTrue(steps.get(5).forwardOffset() > steps.get(4).forwardOffset());
         assertTrue(steps.get(6).forwardOffset() > steps.get(5).forwardOffset());
+        assertEquals(steps.get(8), steps.get(9));
     }
 
     @Test
@@ -40,13 +41,16 @@ class SmeargleFrustrationSequenceTest {
 
         assertTrue(lookBackIndex > 0);
         assertTrue(steps.size() > lookBackIndex + 5);
-        assertTrue(steps.get(lookBackIndex + 1).forwardOffset() < steps.get(lookBackIndex).forwardOffset());
+        double lookBackOffset = steps.get(lookBackIndex).forwardOffset();
+        assertEquals(steps.get(lookBackIndex), steps.get(lookBackIndex + 1));
+        assertTrue(steps.stream().skip(lookBackIndex + 1).anyMatch(step -> step.facingMode() == SmeargleFrustrationSequence.FacingMode.ART && step.forwardOffset() < lookBackOffset));
         double retreatFloor = steps.get(lookBackIndex + 4).forwardOffset();
         double surgePeak = steps.subList(lookBackIndex + 5, steps.size()).stream()
             .mapToDouble(SmeargleFrustrationSequence.Step::forwardOffset)
             .max()
             .orElse(0.0D);
         assertTrue(surgePeak > retreatFloor);
+        assertEquals(steps.get(steps.size() - 2), steps.getLast());
         assertEquals(0.0D, steps.getLast().forwardOffset());
         assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.getLast().facingMode());
     }
