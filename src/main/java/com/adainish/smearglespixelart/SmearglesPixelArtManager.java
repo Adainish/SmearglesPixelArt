@@ -25,6 +25,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 public final class SmearglesPixelArtManager {
+    static final int CLEANUP_DELAY_TICKS = 20 * 5;
     private static final String SMEARGLE_PROPERTIES = "species=smeargle level=50";
 
     private final PixelArtTemplateRegistry templates;
@@ -73,9 +74,14 @@ public final class SmearglesPixelArtManager {
 
         int placed = activeRound.nextPlacementIndex;
         int total = activeRound.template.blocks().size();
+        String phaseDetails = switch (activeRound.phase) {
+            case PAINTING -> "<gold>Smeargle is painting right now.</gold> <gray>Revealed <yellow>" + placed + "</yellow>/<yellow>" + total + "</yellow> blocks.</gray>";
+            case WAITING_TO_CLEAR -> "<gold>Smeargle finished the round.</gold> <gray>Cleanup starts in <yellow>" + activeRound.cleanupWaitTicksRemaining + "</yellow> ticks.</gray>";
+            case CLEARING -> "<gold>Smeargle is clearing the canvas.</gold> <gray>Cleared <yellow>" + activeRound.nextCleanupIndex + "</yellow>/<yellow>" + total + "</yellow> blocks.</gray>";
+        };
         return MiniMessageText.deserialize(
             server,
-            "<gold>Smeargle is painting right now.</gold> <gray>Revealed <yellow>" + placed + "</yellow>/<yellow>" + total + "</yellow> blocks.</gray>"
+            phaseDetails
                 + " <gray>Canvas:</gray> <aqua>" + MiniMessageText.escape(activeRound.dimensionId) + "</aqua> <yellow>"
                 + activeRound.origin.getX() + " " + activeRound.origin.getY() + " " + activeRound.origin.getZ() + "</yellow>"
                 + " <gray>at</gray> <gold>" + activeRound.ticksPerPlacement + "</gold> <gray>ticks per block.</gray>"
@@ -143,7 +149,7 @@ public final class SmearglesPixelArtManager {
             "<green><bold>" + MiniMessageText.escape(player.getName().getString()) + "</bold></green> "
                 + "<gray>guessed</gray> <gold>" + MiniMessageText.escape(activeRound.template.pokemon()) + "</gold> <gray>correctly and wins the round!</gray>"
         );
-        finishRound(player.getServer(), false);
+        beginCleanup(player.getServer());
         return true;
     }
 
@@ -158,19 +164,41 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
+        if (activeRound.phase == RoundPhase.WAITING_TO_CLEAR) {
+            if (activeRound.cleanupWaitTicksRemaining > 0) {
+                activeRound.cleanupWaitTicksRemaining--;
+                return;
+            }
+            activeRound.phase = RoundPhase.CLEARING;
+            activeRound.cooldownTicks = 0;
+            broadcast(server, "<gray>Smeargle is starting to clean up the canvas.</gray>");
+        }
+
         if (activeRound.cooldownTicks > 0) {
             activeRound.cooldownTicks--;
             return;
         }
 
-        activeRound.cooldownTicks = activeRound.ticksPerPlacement;
+        if (activeRound.phase == RoundPhase.CLEARING) {
+            if (activeRound.nextCleanupIndex >= activeRound.cleanupOrder.size()) {
+                finishRound(server, false);
+                return;
+            }
+
+            PixelArtTemplate.BlockPlacement placement = activeRound.cleanupOrder.get(activeRound.nextCleanupIndex);
+            placeBlock(world, activeRound.origin.add(placement.x(), placement.y(), placement.z()), "minecraft:air");
+            activeRound.nextCleanupIndex++;
+            moveSmeargle(world, activeRound.origin, placement);
+            activeRound.cooldownTicks = activeRound.ticksPerPlacement;
+            return;
+        }
 
         if (activeRound.nextPlacementIndex >= activeRound.revealOrder.size()) {
             broadcast(
                 server,
                 "<yellow>Smeargle finished the entire painting.</yellow> <gray>The Pokémon was</gray> <gold>" + MiniMessageText.escape(activeRound.template.pokemon()) + "</gold><gray>.</gray>"
             );
-            finishRound(server, false);
+            beginCleanup(server);
             return;
         }
 
@@ -178,6 +206,7 @@ public final class SmearglesPixelArtManager {
         placeBlock(world, activeRound.origin.add(placement.x(), placement.y(), placement.z()), placement.blockId());
         activeRound.nextPlacementIndex++;
         moveSmeargle(world, activeRound.origin, placement);
+        activeRound.cooldownTicks = activeRound.ticksPerPlacement;
 
         if (activeRound.nextPlacementIndex % 8 == 0 || activeRound.nextPlacementIndex == activeRound.revealOrder.size()) {
             broadcast(
@@ -209,6 +238,7 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
+        clearActiveCanvas(server);
         despawnSmeargle(server);
         activeRound = null;
         broadcast(server, message);
@@ -242,11 +272,22 @@ public final class SmearglesPixelArtManager {
     }
 
     private void finishRound(MinecraftServer server, boolean silent) {
+        clearActiveCanvas(server);
         despawnSmeargle(server);
         activeRound = null;
         if (!silent) {
-            broadcast(server, "<gray>Use an admin start command to begin the next round.</gray>");
+            broadcast(server, "<gray>Smeargle cleaned up the canvas. Use an admin start command to begin the next round.</gray>");
         }
+    }
+
+    private void beginCleanup(MinecraftServer server) {
+        if (activeRound == null || activeRound.phase != RoundPhase.PAINTING) {
+            return;
+        }
+        activeRound.phase = RoundPhase.WAITING_TO_CLEAR;
+        activeRound.cleanupWaitTicksRemaining = CLEANUP_DELAY_TICKS;
+        activeRound.cooldownTicks = 0;
+        broadcast(server, "<gray>Smeargle will start cleaning the canvas in 5 seconds.</gray>");
     }
 
     private void clearCanvas(ServerWorld world, BlockPos origin, CanvasFootprint footprint) {
@@ -334,6 +375,19 @@ public final class SmearglesPixelArtManager {
         server.getPlayerManager().broadcast(MiniMessageText.deserialize(server, message), false);
     }
 
+    private void clearActiveCanvas(MinecraftServer server) {
+        if (activeRound == null) {
+            return;
+        }
+
+        ServerWorld world = server.getWorld(activeRound.worldKey);
+        if (world == null) {
+            return;
+        }
+
+        clearCanvas(world, activeRound.origin, CanvasFootprint.of(activeRound.template));
+    }
+
     @Nullable
     private ConfiguredCanvas configuredCanvas(MinecraftServer server) {
         SmearglesPixelArtConfig config = configSupplier.get();
@@ -350,9 +404,13 @@ public final class SmearglesPixelArtManager {
         private final BlockPos origin;
         private final PixelArtTemplate template;
         private final java.util.List<PixelArtTemplate.BlockPlacement> revealOrder;
+        private final java.util.List<PixelArtTemplate.BlockPlacement> cleanupOrder;
         private final int ticksPerPlacement;
+        private RoundPhase phase;
         private int nextPlacementIndex;
+        private int nextCleanupIndex;
         private int cooldownTicks;
+        private int cleanupWaitTicksRemaining;
         private boolean firstLetterHintSent;
         private boolean silhouetteHintSent;
         @Nullable
@@ -364,8 +422,10 @@ public final class SmearglesPixelArtManager {
             this.origin = origin;
             this.template = template;
             this.revealOrder = template.revealOrder();
+            this.cleanupOrder = this.revealOrder.reversed();
             this.ticksPerPlacement = ticksPerPlacement;
             this.cooldownTicks = ticksPerPlacement;
+            this.phase = RoundPhase.PAINTING;
         }
     }
 
@@ -383,5 +443,11 @@ public final class SmearglesPixelArtManager {
     }
 
     private record CanvasKey(RegistryKey<World> worldKey, BlockPos origin) {
+    }
+
+    private enum RoundPhase {
+        PAINTING,
+        WAITING_TO_CLEAR,
+        CLEARING
     }
 }

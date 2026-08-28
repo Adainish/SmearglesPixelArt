@@ -107,6 +107,12 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 - Additional MiniMessage hints are broadcast as Smeargle reveals more of the sprite.
 - Later hints reveal the first letter and then a simple name pattern.
 
+### Round cleanup
+
+- After a round ends, Smeargle waits 5 seconds before clearing the sprite.
+- Cleanup then happens on the configured canvas using the same per-block pacing system.
+- This delay leaves room for future end-of-round animations before the art is removed.
+
 ### Permissions
 
 - Admin commands use the LuckPerms-compatible Fabric permissions API instead of operator levels.
