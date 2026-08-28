@@ -569,7 +569,7 @@ public final class SmearglesPixelArtManager {
             if (!currentState.isAir()) {
                 world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
                 BlockSoundGroup soundGroup = currentState.getSoundGroup();
-                playSound(world, pos, soundGroup.getBreakSound(), SoundCategory.BLOCKS, soundGroup.getVolume(), soundGroup.getPitch());
+                playSound(world, pos, soundGroup.getBreakSound(), SoundCategory.BLOCKS, soundGroup.getVolume() * 0.8F, soundGroup.getPitch() * 0.8F);
             }
             return;
         }
