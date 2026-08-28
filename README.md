@@ -6,11 +6,11 @@ Cobblemon event specification for **Fabric 1.21.1** and **Cobblemon 1.7.0** usin
 
 Smeargle's Mystery Pixel Art is a competitive guessing event where an AI-controlled Smeargle progressively builds a pixel-art Pokémon from a predefined schematic.
 
-Players watch the image slowly appear and try to identify the Pokémon as quickly as possible. The first player to correctly guess the Pokémon wins the round.
+Players watch the image slowly appear and try to identify the Pokémon as quickly as possible. Correct guesses award points each round, with earlier correct answers worth more.
 
 ### Core gameplay loop
 
-**Smeargle starts building → blocks are revealed progressively → players recognise the Pokémon → players submit `/guess <pokemon>`**
+**Admins open a registration window → players join → Smeargle starts building → players submit `/guess <pokemon>`**
 
 ## 2. Platform Target
 
@@ -22,13 +22,16 @@ Players watch the image slowly appear and try to identify the Pokémon as quickl
 
 Each round uses one predefined Pokémon pixel-art schematic.
 
-1. A round starts and announces that Smeargle is beginning a new drawing.
-2. The event selects a hidden target Pokémon tied to the schematic.
-3. Smeargle places blocks gradually rather than revealing the image instantly.
-4. Players attempt to identify the Pokémon while the build is still incomplete.
-5. Players submit guesses with `/guess <pokemon>`.
-6. The first correct guess immediately ends the round and declares the winner.
-7. If nobody guesses correctly before the build finishes, the round ends with the answer revealed.
+1. An admin opens session registration.
+2. Players register with `/smearglesjoin` during a 10-minute signup window.
+3. If players joined, the first round starts automatically when signup expires (or earlier with admin force-start).
+4. The event selects a hidden target Pokémon tied to the schematic.
+5. Smeargle places blocks gradually rather than revealing the image instantly.
+6. Players attempt to identify the Pokémon while the build is still incomplete.
+7. Players submit guesses with `/guess <pokemon>`.
+8. Correct guesses award points (first correct = 10, then decreasing to a minimum of 1).
+9. If nobody guesses correctly before the build finishes, the round ends with the answer revealed.
+10. After the configured number of rounds, player totals are compared and the top scorer(s) win.
 
 ## 4. Gameplay Requirements
 
@@ -43,17 +46,14 @@ Each round uses one predefined Pokémon pixel-art schematic.
 
 - Guesses are submitted with `/guess <pokemon>`.
 - Guess matching should accept the intended Pokémon name in a player-friendly way.
-- The first correct guess wins the round.
+- Correct guesses score points by order (10 down to 1 minimum).
 - Incorrect guesses must not end the round.
 - Only one Pokémon answer is valid for each round.
 
 ### 4.3 Win condition
 
-- The winner is the first player whose guess matches the hidden Pokémon for the active round.
-- When a player wins:
-  - the round stops immediately,
-  - the correct Pokémon is revealed,
-  - the winner is broadcast to all players.
+- The final winner is decided after the configured round count is completed.
+- Players with the highest total score at the end are declared the winner(s).
 
 ## 5. Messaging
 
@@ -80,7 +80,8 @@ The finished project should support:
 - running a Smeargle-driven pixel-art guessing round,
 - progressively placing schematic blocks,
 - accepting player guesses through `/guess <pokemon>`,
-- determining the first correct guess,
+- awarding ordered points for correct guesses,
+- determining end-of-session winner(s) from cumulative score,
 - announcing the result with MiniMessage text.
 
 ## 8. Current Implementation
@@ -89,8 +90,9 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 
 ### Admin commands
 
-- `/smearglespixelart start random` starts a round with a random built-in template on the configured canvas.
-- `/smearglespixelart start template <template>` starts a round with a specific built-in template on the configured canvas.
+- `/smearglespixelart start random [rounds]` starts a game session using random templates (default: 1 round).
+- `/smearglespixelart start template <template> [rounds]` starts a game session with the named template first, then uses random templates for remaining rounds (default: 1 round).
+- `/smearglespixelart force-start` closes an active registration window early and starts immediately when players are registered.
 - `/smearglespixelart reload` reloads the Smeargle configuration file.
 - `/smearglespixelart record <template> <from> <to> <pokemon>` records a 2D sprite selection from the world into a reusable template JSON file.
 - `/smearglespixelart list` shows available built-in templates.
@@ -100,6 +102,7 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 ### Player command
 
 - `/guess <pokemon>` submits a guess for the active round.
+- `/smearglesjoin` registers the player during an active 10-minute session signup window.
 
 ### Round hints
 
