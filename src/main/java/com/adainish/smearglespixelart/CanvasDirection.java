@@ -68,7 +68,7 @@ public enum CanvasDirection {
     }
 
     public BlockPos supportAnchor(BlockPos blockPos) {
-        return blockPos.add(-this.facingX, 0, -this.facingZ);
+        return blockPos.add(this.facingX, 0, this.facingZ);
     }
 
     public double artistX(BlockPos pos) {

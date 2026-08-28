@@ -15,13 +15,13 @@ class SmeargleSupportColumnTest {
             new PixelArtTemplate.BlockPlacement(2, 3, 0, "minecraft:white_concrete")
         );
 
-        assertEquals(new BlockPos(12, 67, 11), supportColumn.anchor());
+        assertEquals(new BlockPos(12, 67, 9), supportColumn.anchor());
         assertEquals(67, supportColumn.standingY());
         assertEquals(
             java.util.Set.of(
-                new BlockPos(12, 64, 11),
-                new BlockPos(12, 65, 11),
-                new BlockPos(12, 66, 11)
+                new BlockPos(12, 64, 9),
+                new BlockPos(12, 65, 9),
+                new BlockPos(12, 66, 9)
             ),
             supportColumn.supportBlocks()
         );
@@ -35,7 +35,7 @@ class SmeargleSupportColumnTest {
             new PixelArtTemplate.BlockPlacement(0, 0, 1, "minecraft:black_concrete")
         );
 
-        assertEquals(new BlockPos(5, 70, 5), supportColumn.anchor());
+        assertEquals(new BlockPos(3, 70, 5), supportColumn.anchor());
         assertEquals(70, supportColumn.standingY());
         assertTrue(supportColumn.supportBlocks().isEmpty());
     }
@@ -56,13 +56,13 @@ class SmeargleSupportColumnTest {
 
         assertEquals(
             java.util.Set.of(
-                new BlockPos(-1, 50, 1),
-                new BlockPos(-1, 51, 1),
-                new BlockPos(-1, 52, 1),
-                new BlockPos(-1, 53, 1)
+                new BlockPos(1, 50, 1),
+                new BlockPos(1, 51, 1),
+                new BlockPos(1, 52, 1),
+                new BlockPos(1, 53, 1)
             ),
             highColumn.supportBlocks()
         );
-        assertEquals(java.util.Set.of(new BlockPos(-1, 50, 1)), lowColumn.supportBlocks());
+        assertEquals(java.util.Set.of(new BlockPos(1, 50, 1)), lowColumn.supportBlocks());
     }
 }
