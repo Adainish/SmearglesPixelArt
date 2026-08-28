@@ -430,14 +430,11 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
-        if (activeRound.frustrationStepIndex >= activeRound.frustrationSteps.size()) {
-            restorePaintingPose(world);
-            activeRound.phase = RoundPhase.PAINTING;
-            return;
+        if (activeRound.frustrationStepIndex < activeRound.frustrationSteps.size()) {
+            playFrustrationStep(world, activeRound.frustrationSteps.get(activeRound.frustrationStepIndex));
+            activeRound.frustrationStepIndex++;
         }
 
-        playFrustrationStep(world, activeRound.frustrationSteps.get(activeRound.frustrationStepIndex));
-        activeRound.frustrationStepIndex++;
         if (activeRound.frustrationStepIndex >= activeRound.frustrationSteps.size()) {
             restorePaintingPose(world);
             activeRound.phase = RoundPhase.PAINTING;

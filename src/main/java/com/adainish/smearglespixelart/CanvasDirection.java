@@ -96,10 +96,14 @@ public enum CanvasDirection {
     }
 
     private double normalizedFacingX() {
-        return this.facingX / Math.sqrt((this.facingX * this.facingX) + (this.facingZ * this.facingZ));
+        return this.facingX / facingMagnitude();
     }
 
     private double normalizedFacingZ() {
-        return this.facingZ / Math.sqrt((this.facingX * this.facingX) + (this.facingZ * this.facingZ));
+        return this.facingZ / facingMagnitude();
+    }
+
+    private double facingMagnitude() {
+        return Math.sqrt((this.facingX * this.facingX) + (this.facingZ * this.facingZ));
     }
 }
