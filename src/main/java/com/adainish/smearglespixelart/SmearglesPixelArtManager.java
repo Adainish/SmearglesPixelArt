@@ -158,11 +158,13 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
-        if (!activeRound.firstLetterHintSent && activeRound.nextPlacementIndex * 3 >= total) {
+        long revealed = activeRound.nextPlacementIndex;
+        long totalBlocks = total;
+        if (!activeRound.firstLetterHintSent && revealed * 3L >= totalBlocks) {
             activeRound.firstLetterHintSent = true;
             broadcast(server, PokemonHintFormatter.firstLetterHint(activeRound.template));
         }
-        if (!activeRound.silhouetteHintSent && activeRound.nextPlacementIndex * 3 >= total * 2) {
+        if (!activeRound.silhouetteHintSent && revealed * 3L >= totalBlocks * 2L) {
             activeRound.silhouetteHintSent = true;
             broadcast(server, PokemonHintFormatter.silhouetteHint(activeRound.template));
         }
