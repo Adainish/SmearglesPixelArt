@@ -51,6 +51,7 @@ public final class SmearglesPixelArtManager {
     private ActiveRound activeRound;
     @Nullable
     private ActiveSession activeSession;
+    private Set<UUID> currentSessionParticipants = new HashSet<>();
 
     public SmearglesPixelArtManager(
         PixelArtTemplateRegistry templates,
@@ -249,7 +250,7 @@ public final class SmearglesPixelArtManager {
             activeSession.award(player, points);
         }
         int totalPoints = activeSession == null ? points : activeSession.pointsFor(playerId);
-        broadcast(player.getServer(), GuessAnnouncementFormatter.correctGuessAnnouncement(player.getName().getString(), points, totalPoints));
+        broadcastToParticipants(player.getServer(), GuessAnnouncementFormatter.correctGuessAnnouncement(player.getName().getString(), points, totalPoints));
         playRoundSound(player.getServer(), activeRound.origin, SmeargleMinigameSounds.correctGuess());
         return true;
     }
@@ -273,7 +274,7 @@ public final class SmearglesPixelArtManager {
             }
             activeRound.phase = RoundPhase.CLEARING;
             activeRound.cooldownTicks = 0;
-            broadcast(server, "<gray>Smeargle is starting to clean up the canvas.</gray>");
+            broadcastToParticipants(server, "<gray>Smeargle is starting to clean up the canvas.</gray>");
         }
 
         if (activeRound.phase == RoundPhase.ANGER_REACTION) {
@@ -309,7 +310,7 @@ public final class SmearglesPixelArtManager {
         }
 
         if (activeRound.nextPlacementIndex >= activeRound.revealOrder.size()) {
-            broadcast(
+            broadcastToParticipants(
                 server,
                 "<yellow>Smeargle finished the entire painting.</yellow> <gray>The Pokémon was</gray> <gold>" + MiniMessageText.escape(activeRound.template.pokemon()) + "</gold><gray>.</gray>"
             );
@@ -326,7 +327,7 @@ public final class SmearglesPixelArtManager {
             placedThisStep++;
 
             if (activeRound.nextPlacementIndex % 8 == 0 || activeRound.nextPlacementIndex == activeRound.revealOrder.size()) {
-                broadcast(
+                broadcastToParticipants(
                     server,
                     "<gray>Smeargle has revealed <yellow>" + activeRound.nextPlacementIndex + "</yellow>/<yellow>"
                         + activeRound.revealOrder.size() + "</yellow> blocks.</gray>"
@@ -342,11 +343,11 @@ public final class SmearglesPixelArtManager {
             long totalBlocks = total;
             if (!activeRound.firstLetterHintSent && revealed * 3L >= totalBlocks) {
                 activeRound.firstLetterHintSent = true;
-                broadcast(server, PokemonHintFormatter.firstLetterHint(activeRound.template));
+                broadcastToParticipants(server, PokemonHintFormatter.firstLetterHint(activeRound.template));
             }
             if (!activeRound.silhouetteHintSent && revealed * 3L >= totalBlocks * 2L) {
                 activeRound.silhouetteHintSent = true;
-                broadcast(server, PokemonHintFormatter.silhouetteHint(activeRound.template));
+                broadcastToParticipants(server, PokemonHintFormatter.silhouetteHint(activeRound.template));
             }
             tryTriggerAngerReaction(world);
             if (activeRound.phase != RoundPhase.PAINTING) {
@@ -417,13 +418,13 @@ public final class SmearglesPixelArtManager {
         activeRound.currentSupportAnchor = configuredCanvas.direction().supportAnchor(canvasOrigin);
         activeRound.currentStandingY = canvasOrigin.getY();
 
-        broadcast(
+        broadcastToParticipants(
             world.getServer(),
             "<aqua><bold>Round " + roundNumber + "/" + totalRounds + " has started!</bold></aqua> "
                 + "<gray>Use</gray> <yellow>/guess &lt;pokemon&gt;</yellow> <gray>to score points.</gray>"
         );
-        broadcast(world.getServer(), "<gray>Scoring:</gray> <gold>10</gold><gray> points for first correct, down to a minimum of </gray><gold>1</gold><gray>.</gray>");
-        broadcast(world.getServer(), PokemonHintFormatter.lengthHint(template));
+        broadcastToParticipants(world.getServer(), "<gray>Scoring:</gray> <gold>10</gold><gray> points for first correct, down to a minimum of </gray><gold>1</gold><gray>.</gray>");
+        broadcastToParticipants(world.getServer(), PokemonHintFormatter.lengthHint(template));
         playSound(world, canvasOrigin, SmeargleMinigameSounds.roundStart());
         return StartResult.STARTED;
     }
@@ -455,6 +456,7 @@ public final class SmearglesPixelArtManager {
             return false;
         }
         int registeredPlayers = activeSession.registeredPlayerCount();
+        currentSessionParticipants = new HashSet<>(activeSession.getRegisteredPlayerIds());
         activeSession.closeRegistration();
         broadcast(
             server,
@@ -481,7 +483,7 @@ public final class SmearglesPixelArtManager {
         if (activeSession != null && activeSession.hasMoreRounds()) {
             ConfiguredCanvas configuredCanvas = configuredCanvas(server);
             if (configuredCanvas == null) {
-                broadcast(server, "<red>The configured canvas dimension is unavailable. Ending the active game session.</red>");
+                broadcastToParticipants(server, "<red>The configured canvas dimension is unavailable. Ending the active game session.</red>");
                 activeSession = null;
                 return;
             }
@@ -489,7 +491,7 @@ public final class SmearglesPixelArtManager {
             if (nextResult == StartResult.STARTED) {
                 return;
             }
-            broadcast(server, "<red>Unable to start the next round. Ending the active game session.</red>");
+            broadcastToParticipants(server, "<red>Unable to start the next round. Ending the active game session.</red>");
             activeSession = null;
             return;
         }
@@ -506,7 +508,7 @@ public final class SmearglesPixelArtManager {
     private void announceFinalWinners(MinecraftServer server, ActiveSession session) {
         List<PlayerScore> leaderboard = session.leaderboard();
         if (leaderboard.isEmpty()) {
-            broadcast(server, "<gold><bold>All rounds are complete!</bold></gold> <gray>No players scored any points this session.</gray>");
+            broadcastToParticipants(server, "<gold><bold>All rounds are complete!</bold></gold> <gray>No players scored any points this session.</gray>");
             return;
         }
 
@@ -539,8 +541,8 @@ public final class SmearglesPixelArtManager {
             winnerSummary.append("<gold>").append(MiniMessageText.escape(winners.get(i))).append("</gold>");
         }
 
-        broadcast(server, "<gold><bold>All rounds are complete!</bold></gold> <gray>Final scores:</gray> " + standings);
-        broadcast(
+        broadcastToParticipants(server, "<gold><bold>All rounds are complete!</bold></gold> <gray>Final scores:</gray> " + standings);
+        broadcastToParticipants(
             server,
             winners.size() == 1
                 ? "<green>Winner:</green> " + winnerSummary + " <gray>with</gray> <yellow>" + winningScore + "</yellow> <gray>points.</gray>"
@@ -555,7 +557,7 @@ public final class SmearglesPixelArtManager {
         activeRound.phase = RoundPhase.WAITING_TO_CLEAR;
         activeRound.cleanupWaitTicksRemaining = CLEANUP_DELAY_TICKS;
         activeRound.cooldownTicks = 0;
-        broadcast(server, "<gray>Smeargle will start cleaning the canvas in 5 seconds.</gray>");
+        broadcastToParticipants(server, "<gray>Smeargle will start cleaning the canvas in 5 seconds.</gray>");
     }
 
     private void clearCanvas(ServerWorld world, BlockPos origin, CanvasFootprint footprint) {
@@ -704,7 +706,7 @@ public final class SmearglesPixelArtManager {
         activeRound.frustrationStepIndex = 0;
         activeRound.audienceYaw = audienceYaw(world);
         activeRound.cooldownTicks = 0;
-        broadcast(world.getServer(), configSupplier.get().angerMessage(nextStage, random));
+        broadcastToParticipants(world.getServer(), configSupplier.get().angerMessage(nextStage, random));
         BlockPos soundPos = artistSoundPos();
         if (soundPos != null) {
             playSound(world, soundPos, SmeargleMinigameSounds.angerReaction(nextStage));
@@ -882,6 +884,16 @@ public final class SmearglesPixelArtManager {
 
     private void broadcast(MinecraftServer server, String message) {
         server.getPlayerManager().broadcast(MiniMessageText.deserialize(server, message), false);
+    }
+
+    private void broadcastToParticipants(MinecraftServer server, String message) {
+        Text text = MiniMessageText.deserialize(server, message);
+        for (UUID participantId : currentSessionParticipants) {
+            ServerPlayerEntity player = server.getPlayerManager().getPlayer(participantId);
+            if (player != null) {
+                player.sendMessage(text, false);
+            }
+        }
     }
 
     private void playRoundSound(MinecraftServer server, BlockPos pos, SmeargleMinigameSounds.SoundCue cue) {
@@ -1075,6 +1087,10 @@ public final class SmearglesPixelArtManager {
 
         private boolean isRegistered(UUID playerId) {
             return registeredPlayerIds.contains(playerId);
+        }
+
+        private Set<UUID> getRegisteredPlayerIds() {
+            return Set.copyOf(registeredPlayerIds);
         }
 
         private void closeRegistration() {
