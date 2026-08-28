@@ -15,6 +15,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
@@ -23,6 +24,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,6 +32,7 @@ public final class SmearglesPixelArtManager {
     static final int CLEANUP_DELAY_TICKS = 20 * 5;
     private static final String SMEARGLE_PROPERTIES = "species=smeargle level=50";
     private static final BlockState SMEARGLE_SUPPORT_BLOCK = Blocks.SCAFFOLDING.getDefaultState();
+    private static final int ANGER_REACTION_TICKS = 16;
 
     private final PixelArtTemplateRegistry templates;
     private final Path templateDirectory;
@@ -80,6 +83,7 @@ public final class SmearglesPixelArtManager {
         int total = activeRound.template.blocks().size();
         String phaseDetails = switch (activeRound.phase) {
             case PAINTING -> "<gold>Smeargle is painting right now.</gold> <gray>Revealed <yellow>" + placed + "</yellow>/<yellow>" + total + "</yellow> blocks.</gray>";
+            case ANGER_REACTION -> "<red>Smeargle is glaring at the players.</red> <gray>Anger:</gray> <gold>" + SmeargleAngerMeter.describe(activeRound.angerStage) + "</gold>.";
             case WAITING_TO_CLEAR -> "<gold>Smeargle finished the round.</gold> <gray>Cleanup starts in <yellow>" + activeRound.cleanupWaitTicksRemaining + "</yellow> ticks.</gray>";
             case CLEARING -> "<gold>Smeargle is clearing the canvas.</gold> <gray>Cleared <yellow>" + activeRound.nextCleanupIndex + "</yellow>/<yellow>" + total + "</yellow> blocks.</gray>";
         };
@@ -90,6 +94,7 @@ public final class SmearglesPixelArtManager {
                 + activeRound.origin.getX() + " " + activeRound.origin.getY() + " " + activeRound.origin.getZ() + "</yellow>"
                 + " <gray>facing</gray> <gold>" + MiniMessageText.escape(activeRound.direction.id()) + "</gold>"
                 + " <gray>at</gray> <gold>" + activeRound.ticksPerPlacement + "</gold> <gray>ticks per block.</gray>"
+                + " <gray>Anger:</gray> <gold>" + SmeargleAngerMeter.describe(activeRound.angerStage) + "</gold>."
         );
     }
 
@@ -179,6 +184,11 @@ public final class SmearglesPixelArtManager {
             broadcast(server, "<gray>Smeargle is starting to clean up the canvas.</gray>");
         }
 
+        if (activeRound.phase == RoundPhase.ANGER_REACTION) {
+            tickAngerReaction(world);
+            return;
+        }
+
         if (activeRound.cooldownTicks > 0) {
             activeRound.cooldownTicks--;
             return;
@@ -236,6 +246,7 @@ public final class SmearglesPixelArtManager {
             activeRound.silhouetteHintSent = true;
             broadcast(server, PokemonHintFormatter.silhouetteHint(activeRound.template));
         }
+        tryTriggerAngerReaction(world);
     }
 
     public void stop(MinecraftServer server, String message) {
@@ -364,6 +375,8 @@ public final class SmearglesPixelArtManager {
 
         SmeargleSupportColumn supportColumn = SmeargleSupportColumn.forPlacement(activeRound.direction, origin, placement);
         syncTemporarySupport(world, supportColumn);
+        activeRound.currentSupportAnchor = supportColumn.anchor();
+        activeRound.currentStandingY = supportColumn.standingY();
         entity.refreshPositionAndAngles(
             activeRound.direction.artistX(supportColumn.anchor()),
             activeRound.direction.artistY(supportColumn.standingY()),
@@ -371,6 +384,115 @@ public final class SmearglesPixelArtManager {
             activeRound.direction.yaw(),
             0.0F
         );
+    }
+
+    private void tryTriggerAngerReaction(ServerWorld world) {
+        if (activeRound == null || activeRound.phase != RoundPhase.PAINTING) {
+            return;
+        }
+
+        int nextStage = SmeargleAngerMeter.stageForProgress(activeRound.nextPlacementIndex, activeRound.revealOrder.size());
+        if (nextStage <= activeRound.angerStage) {
+            return;
+        }
+
+        activeRound.angerStage = nextStage;
+        activeRound.phase = RoundPhase.ANGER_REACTION;
+        activeRound.angerTicksRemaining = ANGER_REACTION_TICKS;
+        activeRound.cooldownTicks = 0;
+        showAngerReaction(world, true);
+    }
+
+    private void tickAngerReaction(ServerWorld world) {
+        if (activeRound == null || activeRound.phase != RoundPhase.ANGER_REACTION) {
+            return;
+        }
+
+        if (activeRound.angerTicksRemaining == (ANGER_REACTION_TICKS / 2)) {
+            restorePaintingPose(world);
+        }
+
+        activeRound.angerTicksRemaining--;
+        if (activeRound.angerTicksRemaining <= 0) {
+            activeRound.phase = RoundPhase.PAINTING;
+            return;
+        }
+
+        if (activeRound.angerTicksRemaining % 4 == 0 && activeRound.angerStage >= 2) {
+            showAngerParticles(world);
+        }
+    }
+
+    private void showAngerReaction(ServerWorld world, boolean initialPose) {
+        if (activeRound == null || activeRound.artistEntityId == null || activeRound.currentSupportAnchor == null) {
+            return;
+        }
+
+        Entity entity = world.getEntity(activeRound.artistEntityId);
+        if (entity == null) {
+            return;
+        }
+
+        double baseX = activeRound.direction.artistX(activeRound.currentSupportAnchor);
+        double baseY = activeRound.direction.artistY(activeRound.currentStandingY);
+        double baseZ = activeRound.direction.artistZ(activeRound.currentSupportAnchor);
+        double targetX = baseX;
+        double targetZ = baseZ;
+        float yaw = activeRound.direction.yaw();
+
+        if (initialPose) {
+            ServerPlayerEntity player = nearestPlayer(world, baseX, baseY, baseZ);
+            if (player != null) {
+                double deltaX = player.getX() - baseX;
+                double deltaZ = player.getZ() - baseZ;
+                double horizontalDistance = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+                if (horizontalDistance > 0.001D) {
+                    double step = Math.min(0.85D, horizontalDistance);
+                    targetX = baseX + (deltaX / horizontalDistance) * step;
+                    targetZ = baseZ + (deltaZ / horizontalDistance) * step;
+                }
+                yaw = (float) (MathHelper.atan2(player.getZ() - targetZ, player.getX() - targetX) * (180.0F / (float) Math.PI)) - 90.0F;
+            }
+        }
+
+        entity.refreshPositionAndAngles(targetX, baseY, targetZ, yaw, 0.0F);
+        if (initialPose && activeRound.angerStage >= 2) {
+            entity.addVelocity(0.0D, 0.28D + (activeRound.angerStage * 0.05D), 0.0D);
+            showAngerParticles(world);
+        }
+    }
+
+    private void restorePaintingPose(ServerWorld world) {
+        showAngerReaction(world, false);
+    }
+
+    @Nullable
+    private ServerPlayerEntity nearestPlayer(ServerWorld world, double x, double y, double z) {
+        ServerPlayerEntity nearest = null;
+        double nearestDistance = Double.MAX_VALUE;
+        for (ServerPlayerEntity player : world.getPlayers()) {
+            double distance = player.squaredDistanceTo(x, y, z);
+            if (distance < nearestDistance) {
+                nearest = player;
+                nearestDistance = distance;
+            }
+        }
+        return nearest;
+    }
+
+    private void showAngerParticles(ServerWorld world) {
+        if (activeRound == null || activeRound.currentSupportAnchor == null) {
+            return;
+        }
+
+        double x = activeRound.direction.artistX(activeRound.currentSupportAnchor);
+        double y = activeRound.direction.artistY(activeRound.currentStandingY) + 1.1D;
+        double z = activeRound.direction.artistZ(activeRound.currentSupportAnchor);
+        int angryCount = activeRound.angerStage >= SmeargleAngerMeter.MAX_STAGE ? 8 : 4;
+        world.spawnParticles(ParticleTypes.ANGRY_VILLAGER, x, y, z, angryCount, 0.3D, 0.4D, 0.3D, 0.02D);
+        if (activeRound.angerStage >= SmeargleAngerMeter.MAX_STAGE) {
+            world.spawnParticles(ParticleTypes.SMOKE, x, y, z, 10, 0.25D, 0.3D, 0.25D, 0.01D);
+        }
     }
 
     private void syncTemporarySupport(ServerWorld world, SmeargleSupportColumn supportColumn) {
@@ -470,10 +592,15 @@ public final class SmearglesPixelArtManager {
         private int nextCleanupIndex;
         private int cooldownTicks;
         private int cleanupWaitTicksRemaining;
+        private int angerStage;
+        private int angerTicksRemaining;
         private boolean firstLetterHintSent;
         private boolean silhouetteHintSent;
         @Nullable
         private UUID artistEntityId;
+        @Nullable
+        private BlockPos currentSupportAnchor;
+        private int currentStandingY;
         private final Set<BlockPos> temporarySupportBlocks = new HashSet<>();
 
         private ActiveRound(ServerWorld world, String dimensionId, CanvasDirection direction, BlockPos origin, PixelArtTemplate template, int ticksPerPlacement) {
@@ -508,6 +635,7 @@ public final class SmearglesPixelArtManager {
 
     private enum RoundPhase {
         PAINTING,
+        ANGER_REACTION,
         WAITING_TO_CLEAR,
         CLEARING
     }
