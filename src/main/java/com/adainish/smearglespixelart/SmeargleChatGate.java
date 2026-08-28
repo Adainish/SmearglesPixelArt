@@ -7,7 +7,7 @@ final class SmeargleChatGate {
     private SmeargleChatGate() {
     }
 
-    static boolean shouldBlock(boolean roundActive, Set<UUID> registeredPlayerIds, UUID playerId) {
-        return roundActive && registeredPlayerIds.contains(playerId);
+    static boolean shouldBlock(boolean roundActive, boolean hasBypassPermission, Set<UUID> registeredPlayerIds, UUID playerId) {
+        return roundActive && !hasBypassPermission && registeredPlayerIds.contains(playerId);
     }
 }

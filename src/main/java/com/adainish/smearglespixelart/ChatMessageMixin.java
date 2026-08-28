@@ -1,5 +1,6 @@
 package com.adainish.smearglespixelart;
 
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -17,7 +18,7 @@ public class ChatMessageMixin {
 
     @Inject(method = "handleDecoratedMessage", at = @At("HEAD"), cancellable = true)
     private void onChatMessage(SignedMessage message, CallbackInfo ci) {
-        if (player == null || !SmearglesPixelArtMod.getManager().shouldBlockChat(player.getUuid())) {
+        if (player == null || !SmearglesPixelArtMod.getManager().shouldBlockChat(player.getUuid(), Permissions.check(player, PermissionNodes.CHAT_BYPASS))) {
             return;
         }
 

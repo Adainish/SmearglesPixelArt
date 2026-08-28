@@ -184,8 +184,8 @@ public final class SmearglesPixelArtManager {
         return activeSession.register(player) ? JoinResult.JOINED : JoinResult.ALREADY_JOINED;
     }
 
-    boolean shouldBlockChat(UUID playerId) {
-        return SmeargleChatGate.shouldBlock(activeRound != null, activeSession == null ? Set.of() : activeSession.registeredPlayerIds, playerId);
+    boolean shouldBlockChat(UUID playerId, boolean hasBypassPermission) {
+        return SmeargleChatGate.shouldBlock(activeRound != null, hasBypassPermission, activeSession == null ? Set.of() : activeSession.registeredPlayerIds, playerId);
     }
 
     public ForceStartResult forceStartRegistration(MinecraftServer server) {

@@ -90,20 +90,27 @@ class SmearglesPixelArtManagerTest {
     void blocksChatForRegisteredPlayersDuringActiveRounds() {
         UUID playerId = UUID.randomUUID();
 
-        assertTrue(SmeargleChatGate.shouldBlock(true, Set.of(playerId), playerId));
+        assertTrue(SmeargleChatGate.shouldBlock(true, false, Set.of(playerId), playerId));
     }
 
     @Test
     void doesNotBlockChatBeforeRoundStarts() {
         UUID playerId = UUID.randomUUID();
 
-        assertFalse(SmeargleChatGate.shouldBlock(false, Set.of(playerId), playerId));
+        assertFalse(SmeargleChatGate.shouldBlock(false, false, Set.of(playerId), playerId));
     }
 
     @Test
     void doesNotBlockChatForUnregisteredPlayers() {
         UUID playerId = UUID.randomUUID();
 
-        assertFalse(SmeargleChatGate.shouldBlock(true, Set.of(UUID.randomUUID()), playerId));
+        assertFalse(SmeargleChatGate.shouldBlock(true, false, Set.of(UUID.randomUUID()), playerId));
+    }
+
+    @Test
+    void doesNotBlockChatForPlayersWithBypassPermission() {
+        UUID playerId = UUID.randomUUID();
+
+        assertFalse(SmeargleChatGate.shouldBlock(true, true, Set.of(playerId), playerId));
     }
 }
