@@ -3,7 +3,12 @@ package com.adainish.smearglespixelart;
 public record CanvasFootprint(int minX, int maxX, int minY, int maxY, int minZ, int maxZ) {
     public CanvasFootprint {
         if (minX > maxX || minY > maxY || minZ > maxZ) {
-            throw new IllegalArgumentException("Canvas bounds are invalid.");
+            throw new IllegalArgumentException(
+                "Canvas bounds are invalid: "
+                    + "x=" + minX + ".." + maxX + ", "
+                    + "y=" + minY + ".." + maxY + ", "
+                    + "z=" + minZ + ".." + maxZ
+            );
         }
     }
 
