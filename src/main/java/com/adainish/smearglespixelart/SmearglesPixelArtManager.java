@@ -864,10 +864,11 @@ public final class SmearglesPixelArtManager {
 
     private void playSound(ServerWorld world, BlockPos pos, SmeargleMinigameSounds.SoundCue cue) {
         Identifier identifier = Identifier.tryParse(cue.soundId());
-        if (identifier == null || !Registries.SOUND_EVENT.containsId(identifier)) {
+        if (identifier == null) {
             return;
         }
-        playSound(world, pos, Registries.SOUND_EVENT.get(identifier), cue.category(), cue.volume(), cue.pitch());
+        Registries.SOUND_EVENT.getOrEmpty(identifier)
+            .ifPresent(sound -> playSound(world, pos, sound, cue.category(), cue.volume(), cue.pitch()));
     }
 
     private void playSound(ServerWorld world, BlockPos pos, SoundEvent sound, SoundCategory category, float volume, float pitch) {
