@@ -1,6 +1,8 @@
 package com.adainish.smearglespixelart;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.Set;
@@ -42,5 +44,16 @@ class SmearglesPixelArtManagerTest {
             "Dan", 4
         )));
         assertEquals(Set.of("Bob", "Caro"), winners);
+    }
+
+    @Test
+    void correctGuessAnnouncementDoesNotRevealAnswer() {
+        String message = GuessAnnouncementFormatter.correctGuessAnnouncement("Alice", 7, 19);
+
+        assertTrue(message.contains("Alice"));
+        assertTrue(message.contains("got the answer"));
+        assertTrue(message.contains("7"));
+        assertTrue(message.contains("19"));
+        assertFalse(message.contains("guessed</gray> <gold>"));
     }
 }

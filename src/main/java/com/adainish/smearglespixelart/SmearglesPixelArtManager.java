@@ -247,12 +247,7 @@ public final class SmearglesPixelArtManager {
             activeSession.award(player, points);
         }
         int totalPoints = activeSession == null ? points : activeSession.pointsFor(playerId);
-        broadcast(
-            player.getServer(),
-            "<green><bold>" + MiniMessageText.escape(player.getName().getString()) + "</bold></green> "
-                + "<gray>guessed</gray> <gold>" + MiniMessageText.escape(activeRound.template.pokemon()) + "</gold> <gray>correctly for</gray> "
-                + "<gold>" + points + "</gold> <gray>point" + (points == 1 ? "" : "s") + " (total: " + totalPoints + ").</gray>"
-        );
+        broadcast(player.getServer(), GuessAnnouncementFormatter.correctGuessAnnouncement(player.getName().getString(), points, totalPoints));
         playRoundSound(player.getServer(), activeRound.origin, SmeargleMinigameSounds.correctGuess());
         beginCleanup(player.getServer());
         return true;
