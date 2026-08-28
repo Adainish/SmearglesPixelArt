@@ -66,8 +66,8 @@ public final class SmearglesPixelArtConfig {
     }
 
     public BlockPos canvasOrigin() {
-        normalize();
-        return new BlockPos(this.canvasOrigin.x, this.canvasOrigin.y, this.canvasOrigin.z);
+        CanvasOrigin origin = this.canvasOrigin != null ? this.canvasOrigin : new CanvasOrigin();
+        return new BlockPos(origin.x, origin.y, origin.z);
     }
 
     public int ticksPerPlacement() {

@@ -18,7 +18,7 @@ public final class SmearglesPixelArtMod implements ModInitializer {
     private static final Path CONFIG_PATH = CONFIG_DIRECTORY.resolve("config.json");
 
     private static final PixelArtTemplateRegistry TEMPLATE_REGISTRY = PixelArtTemplateRegistry.loadBuiltins();
-    private static SmearglesPixelArtConfig config = new SmearglesPixelArtConfig();
+    private static volatile SmearglesPixelArtConfig config = new SmearglesPixelArtConfig();
     private static final SmearglesPixelArtManager MANAGER = new SmearglesPixelArtManager(TEMPLATE_REGISTRY, TEMPLATE_DIRECTORY, () -> config);
 
     @Override
