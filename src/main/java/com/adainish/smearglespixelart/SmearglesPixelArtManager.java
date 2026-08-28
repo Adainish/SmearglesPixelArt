@@ -154,6 +154,10 @@ public final class SmearglesPixelArtManager {
         }
 
         int total = activeRound.revealOrder.size();
+        if (total == 0) {
+            return;
+        }
+
         if (!activeRound.firstLetterHintSent && activeRound.nextPlacementIndex * 3 >= total) {
             activeRound.firstLetterHintSent = true;
             broadcast(server, PokemonHintFormatter.firstLetterHint(activeRound.template));
