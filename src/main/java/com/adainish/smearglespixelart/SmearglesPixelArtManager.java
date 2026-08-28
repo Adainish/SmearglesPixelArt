@@ -675,7 +675,10 @@ public final class SmearglesPixelArtManager {
         activeRound.frustrationStepIndex = 0;
         activeRound.audienceYaw = audienceYaw(world);
         activeRound.cooldownTicks = 0;
-        playSound(world, artistSoundPos(), SmeargleMinigameSounds.angerReaction(nextStage));
+        BlockPos soundPos = artistSoundPos();
+        if (soundPos != null) {
+            playSound(world, soundPos, SmeargleMinigameSounds.angerReaction(nextStage));
+        }
     }
 
     private void tickAngerReaction(ServerWorld world) {
@@ -747,9 +750,10 @@ public final class SmearglesPixelArtManager {
         );
     }
 
+    @Nullable
     private BlockPos artistSoundPos() {
         if (activeRound == null || activeRound.currentSupportAnchor == null) {
-            return BlockPos.ORIGIN;
+            return null;
         }
         return new BlockPos(activeRound.currentSupportAnchor.getX(), activeRound.currentStandingY, activeRound.currentSupportAnchor.getZ());
     }
@@ -867,8 +871,10 @@ public final class SmearglesPixelArtManager {
         if (identifier == null) {
             return;
         }
-        Registries.SOUND_EVENT.getOrEmpty(identifier)
-            .ifPresent(sound -> playSound(world, pos, sound, cue.category(), cue.volume(), cue.pitch()));
+        Registries.SOUND_EVENT.getOrEmpty(identifier).ifPresentOrElse(
+            sound -> playSound(world, pos, sound, cue.category(), cue.volume(), cue.pitch()),
+            () -> SmearglesPixelArtMod.LOGGER.warn("Unknown Smeargle minigame sound id {}", cue.soundId())
+        );
     }
 
     private void playSound(ServerWorld world, BlockPos pos, SoundEvent sound, SoundCategory category, float volume, float pitch) {
