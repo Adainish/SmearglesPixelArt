@@ -101,4 +101,29 @@ class SmeargleMovementPlannerTest {
 
         assertTrue(frame.readyToPaint());
     }
+
+    @Test
+    void removesExtraSupportFromTopDown() {
+        SmeargleSupportColumn targetColumn = SmeargleSupportColumn.forPlacement(
+            CanvasDirection.NORTH,
+            new BlockPos(10, 64, 10),
+            new PixelArtTemplate.BlockPlacement(2, 3, 0, "minecraft:white_concrete")
+        );
+
+        SmeargleMovementPlanner.MovementFrame frame = SmeargleMovementPlanner.nextFrame(
+            targetColumn.anchor(),
+            targetColumn.standingY(),
+            Set.of(
+                new BlockPos(12, 64, 9),
+                new BlockPos(12, 65, 9),
+                new BlockPos(12, 66, 9),
+                new BlockPos(12, 67, 9)
+            ),
+            targetColumn,
+            64
+        );
+
+        assertEquals(Set.of(new BlockPos(12, 67, 9)), frame.supportToRemove());
+        assertFalse(frame.readyToPaint());
+    }
 }

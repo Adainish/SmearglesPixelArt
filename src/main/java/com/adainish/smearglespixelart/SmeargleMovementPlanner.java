@@ -53,7 +53,10 @@ final class SmeargleMovementPlanner {
         Set<BlockPos> supportToRemove = new LinkedHashSet<>(currentSupportBlocks);
         supportToRemove.removeAll(targetColumn.supportBlocks());
         if (!supportToRemove.isEmpty()) {
-            return new MovementFrame(currentAnchor, currentStandingY, Set.of(), Set.copyOf(supportToRemove), false);
+            BlockPos nextSupport = supportToRemove.stream()
+                .max(java.util.Comparator.comparingInt(BlockPos::getY))
+                .orElseThrow();
+            return new MovementFrame(currentAnchor, currentStandingY, Set.of(), Set.of(nextSupport), false);
         }
 
         Set<BlockPos> supportToAdd = new LinkedHashSet<>(targetColumn.supportBlocks());
