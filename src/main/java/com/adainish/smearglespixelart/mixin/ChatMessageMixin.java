@@ -1,5 +1,8 @@
-package com.adainish.smearglespixelart;
+package com.adainish.smearglespixelart.mixin;
 
+import com.adainish.smearglespixelart.MiniMessageText;
+import com.adainish.smearglespixelart.PermissionNodes;
+import com.adainish.smearglespixelart.SmearglesPixelArtMod;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.network.ServerPlayNetworkHandler;

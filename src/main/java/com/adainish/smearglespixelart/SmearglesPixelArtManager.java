@@ -184,7 +184,7 @@ public final class SmearglesPixelArtManager {
         return activeSession.register(player) ? JoinResult.JOINED : JoinResult.ALREADY_JOINED;
     }
 
-    boolean shouldBlockChat(UUID playerId, boolean hasBypassPermission) {
+    public boolean shouldBlockChat(UUID playerId, boolean hasBypassPermission) {
         return SmeargleChatGate.shouldBlock(activeRound != null, hasBypassPermission, activeSession == null ? Set.of() : activeSession.registeredPlayerIds, playerId);
     }
 
