@@ -399,6 +399,7 @@ public final class SmearglesPixelArtManager {
         activeRound.angerStage = nextStage;
         activeRound.phase = RoundPhase.ANGER_REACTION;
         activeRound.angerTicksRemaining = ANGER_REACTION_TICKS;
+        activeRound.angerPoseRestored = false;
         activeRound.cooldownTicks = 0;
         showAngerReaction(world, true);
     }
@@ -408,7 +409,8 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
-        if (activeRound.angerTicksRemaining == (ANGER_REACTION_TICKS / 2)) {
+        if (!activeRound.angerPoseRestored && activeRound.angerTicksRemaining <= (ANGER_REACTION_TICKS / 2)) {
+            activeRound.angerPoseRestored = true;
             restorePaintingPose(world);
         }
 
@@ -451,7 +453,7 @@ public final class SmearglesPixelArtManager {
                     targetX = baseX + (deltaX / horizontalDistance) * step;
                     targetZ = baseZ + (deltaZ / horizontalDistance) * step;
                 }
-                yaw = (float) (MathHelper.atan2(player.getZ() - targetZ, player.getX() - targetX) * (180.0F / (float) Math.PI)) - 90.0F;
+                yaw = (float) (MathHelper.atan2(player.getZ() - baseZ, player.getX() - baseX) * (180.0F / (float) Math.PI)) - 90.0F;
             }
         }
 
@@ -594,6 +596,7 @@ public final class SmearglesPixelArtManager {
         private int cleanupWaitTicksRemaining;
         private int angerStage;
         private int angerTicksRemaining;
+        private boolean angerPoseRestored;
         private boolean firstLetterHintSent;
         private boolean silhouetteHintSent;
         @Nullable
