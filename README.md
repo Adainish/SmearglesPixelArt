@@ -89,8 +89,9 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 
 ### Admin commands
 
-- `/smearglespixelart start random <pos>` starts a round with a random built-in template.
-- `/smearglespixelart start template <template> <pos>` starts a round with a specific built-in template.
+- `/smearglespixelart start random` starts a round with a random built-in template on the configured canvas.
+- `/smearglespixelart start template <template>` starts a round with a specific built-in template on the configured canvas.
+- `/smearglespixelart reload` reloads the Smeargle configuration file.
 - `/smearglespixelart record <template> <from> <to> <pokemon>` records a 2D sprite selection from the world into a reusable template JSON file.
 - `/smearglespixelart list` shows available built-in templates.
 - `/smearglespixelart status` shows current round progress.
@@ -113,12 +114,21 @@ This repository now contains an initial server-side Fabric sidemod implementatio
   - `smearglespixelart.admin`
 - Admin commands are denied by default unless a permissions provider such as LuckPerms grants that node.
 
+### Configured canvas
+
+- Rounds now paint on a configurable fixed canvas instead of taking a per-command build position.
+- Edit `config/smearglespixelart/config.json` to choose:
+  - the target dimension id,
+  - the canvas origin,
+  - the number of ticks Smeargle waits between block placements.
+- Slower painting can be achieved by increasing `ticksPerPlacement`.
+
 ### Built-in templates
 
 - `pikachu`
 - `voltorb`
 
-The block position supplied to the start command is the bottom-left origin of the vertical pixel-art canvas.
+The configured canvas origin is the bottom-left origin of the vertical pixel-art sprite.
 
 ### Recording new 2D sprite templates
 

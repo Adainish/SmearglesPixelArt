@@ -18,37 +18,43 @@ public final class SmearglesPixelArtCommands {
             .requires(Permissions.require(PermissionNodes.ADMIN, false))
             .then(CommandManager.literal("start")
                 .then(CommandManager.literal("random")
-                    .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
-                        .executes(context -> {
-                            boolean started = SmearglesPixelArtMod.getManager().startRandom(
-                                context.getSource().getWorld(),
-                                BlockPosArgumentType.getBlockPos(context, "pos")
-                            );
-                            if (!started) {
-                                context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"), false);
-                                return 0;
-                            }
-                            return 1;
-                        })
-                    )
+                    .executes(context -> switch (SmearglesPixelArtMod.getManager().startRandom(context.getSource().getServer())) {
+                        case STARTED -> 1;
+                        case ROUND_ALREADY_ACTIVE -> {
+                            context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"), false);
+                            yield 0;
+                        }
+                        case CONFIGURED_DIMENSION_UNAVAILABLE -> {
+                            context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>The configured canvas dimension is unavailable.</red>"));
+                            yield 0;
+                        }
+                        case TEMPLATE_NOT_FOUND -> {
+                            context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>No template was available to start.</red>"));
+                            yield 0;
+                        }
+                    })
                 )
                 .then(CommandManager.literal("template")
                     .then(CommandManager.argument("template", StringArgumentType.word())
                         .suggests((context, builder) -> CommandSource.suggestMatching(SmearglesPixelArtMod.getManager().templateNames(), builder))
-                        .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
-                            .executes(context -> {
-                                boolean started = SmearglesPixelArtMod.getManager().startTemplate(
-                                    context.getSource().getWorld(),
-                                    BlockPosArgumentType.getBlockPos(context, "pos"),
-                                    StringArgumentType.getString(context, "template")
-                                );
-                                if (!started) {
-                                    context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>That template was not found, or a round is already active.</red>"), false);
-                                    return 0;
-                                }
-                                return 1;
-                            })
-                        )
+                        .executes(context -> switch (SmearglesPixelArtMod.getManager().startTemplate(
+                            context.getSource().getServer(),
+                            StringArgumentType.getString(context, "template")
+                        )) {
+                            case STARTED -> 1;
+                            case ROUND_ALREADY_ACTIVE -> {
+                                context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"), false);
+                                yield 0;
+                            }
+                            case TEMPLATE_NOT_FOUND -> {
+                                context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>That template was not found.</red>"), false);
+                                yield 0;
+                            }
+                            case CONFIGURED_DIMENSION_UNAVAILABLE -> {
+                                context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>The configured canvas dimension is unavailable.</red>"));
+                                yield 0;
+                            }
+                        })
                     )
                 )
             )
@@ -73,6 +79,26 @@ public final class SmearglesPixelArtCommands {
                 .executes(context -> {
                     context.getSource().sendFeedback(() -> SmearglesPixelArtMod.getManager().describeStatus(context.getSource().getServer()), false);
                     return 1;
+                })
+            )
+            .then(CommandManager.literal("reload")
+                .executes(context -> {
+                    try {
+                        SmearglesPixelArtMod.reloadConfig();
+                        context.getSource().sendFeedback(
+                            () -> MiniMessageText.deserialize(
+                                context.getSource().getServer(),
+                                "<green>Reloaded Smeargle configuration from</green> <aqua>"
+                                    + MiniMessageText.escape(SmearglesPixelArtMod.getConfigPath().toString()) + "</aqua><gray>.</gray>"
+                            ),
+                            false
+                        );
+                        return 1;
+                    } catch (IOException exception) {
+                        SmearglesPixelArtMod.LOGGER.error("Unable to reload Smeargle configuration", exception);
+                        context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>Unable to reload the Smeargle configuration file.</red>"));
+                        return 0;
+                    }
                 })
             )
             .then(CommandManager.literal("record")

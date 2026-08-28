@@ -8,10 +8,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import java.util.function.Supplier;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -19,24 +21,28 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.registry.Registries;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 public final class SmearglesPixelArtManager {
-    private static final int TICKS_PER_PLACEMENT = 10;
     private static final String SMEARGLE_PROPERTIES = "species=smeargle level=50";
 
     private final PixelArtTemplateRegistry templates;
     private final Path templateDirectory;
+    private final Supplier<SmearglesPixelArtConfig> configSupplier;
     private final Random random = new Random();
     private final Map<CanvasKey, CanvasFootprint> canvasFootprints = new HashMap<>();
     @Nullable
     private ActiveRound activeRound;
 
-    public SmearglesPixelArtManager(PixelArtTemplateRegistry templates, Path templateDirectory) {
+    public SmearglesPixelArtManager(
+        PixelArtTemplateRegistry templates,
+        Path templateDirectory,
+        Supplier<SmearglesPixelArtConfig> configSupplier
+    ) {
         this.templates = templates;
         this.templateDirectory = templateDirectory;
+        this.configSupplier = configSupplier;
     }
 
     public Iterable<String> templateNames() {
@@ -48,8 +54,21 @@ public final class SmearglesPixelArtManager {
     }
 
     public Text describeStatus(MinecraftServer server) {
+        ConfiguredCanvas configuredCanvas = configuredCanvas(server);
         if (activeRound == null) {
-            return MiniMessageText.deserialize(server, "<gray>No active Smeargle round.</gray>");
+            if (configuredCanvas == null) {
+                return MiniMessageText.deserialize(
+                    server,
+                    "<gray>No active Smeargle round.</gray> <red>The configured canvas dimension is unavailable.</red>"
+                );
+            }
+            return MiniMessageText.deserialize(
+                server,
+                "<gray>No active Smeargle round.</gray> <gray>Configured canvas:</gray> <aqua>"
+                    + MiniMessageText.escape(configuredCanvas.dimensionId()) + "</aqua> <yellow>"
+                    + configuredCanvas.origin().getX() + " " + configuredCanvas.origin().getY() + " " + configuredCanvas.origin().getZ()
+                    + "</yellow> <gray>at</gray> <gold>" + configuredCanvas.ticksPerPlacement() + "</gold> <gray>ticks per block.</gray>"
+            );
         }
 
         int placed = activeRound.nextPlacementIndex;
@@ -57,16 +76,31 @@ public final class SmearglesPixelArtManager {
         return MiniMessageText.deserialize(
             server,
             "<gold>Smeargle is painting right now.</gold> <gray>Revealed <yellow>" + placed + "</yellow>/<yellow>" + total + "</yellow> blocks.</gray>"
+                + " <gray>Canvas:</gray> <aqua>" + MiniMessageText.escape(activeRound.dimensionId) + "</aqua> <yellow>"
+                + activeRound.origin.getX() + " " + activeRound.origin.getY() + " " + activeRound.origin.getZ() + "</yellow>"
+                + " <gray>at</gray> <gold>" + activeRound.ticksPerPlacement + "</gold> <gray>ticks per block.</gray>"
         );
     }
 
-    public boolean startRandom(ServerWorld world, BlockPos origin) {
-        return start(world, origin, templates.randomTemplate(random));
+    public StartResult startRandom(MinecraftServer server) {
+        ConfiguredCanvas configuredCanvas = configuredCanvas(server);
+        if (configuredCanvas == null) {
+            return StartResult.CONFIGURED_DIMENSION_UNAVAILABLE;
+        }
+        return start(configuredCanvas, templates.randomTemplate(random));
     }
 
-    public boolean startTemplate(ServerWorld world, BlockPos origin, String templateName) {
+    public StartResult startTemplate(MinecraftServer server, String templateName) {
+        ConfiguredCanvas configuredCanvas = configuredCanvas(server);
+        if (configuredCanvas == null) {
+            return StartResult.CONFIGURED_DIMENSION_UNAVAILABLE;
+        }
+
         Optional<PixelArtTemplate> template = templates.find(templateName);
-        return template.filter(value -> start(world, origin, value)).isPresent();
+        if (template.isEmpty()) {
+            return StartResult.TEMPLATE_NOT_FOUND;
+        }
+        return start(configuredCanvas, template.orElseThrow());
     }
 
     public RecordedTemplate recordTemplate(ServerWorld world, String templateName, String pokemon, BlockPos first, BlockPos second) throws IOException {
@@ -129,7 +163,7 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
-        activeRound.cooldownTicks = TICKS_PER_PLACEMENT;
+        activeRound.cooldownTicks = activeRound.ticksPerPlacement;
 
         if (activeRound.nextPlacementIndex >= activeRound.revealOrder.size()) {
             broadcast(
@@ -180,12 +214,13 @@ public final class SmearglesPixelArtManager {
         broadcast(server, message);
     }
 
-    private boolean start(ServerWorld world, BlockPos origin, PixelArtTemplate template) {
+    private StartResult start(ConfiguredCanvas configuredCanvas, PixelArtTemplate template) {
         if (activeRound != null) {
-            return false;
+            return StartResult.ROUND_ALREADY_ACTIVE;
         }
 
-        BlockPos canvasOrigin = origin.toImmutable();
+        ServerWorld world = configuredCanvas.world();
+        BlockPos canvasOrigin = configuredCanvas.origin().toImmutable();
         CanvasKey canvasKey = new CanvasKey(world.getRegistryKey(), canvasOrigin);
         CanvasFootprint nextFootprint = CanvasFootprint.of(template);
         CanvasFootprint clearFootprint = Optional.ofNullable(canvasFootprints.get(canvasKey))
@@ -194,8 +229,8 @@ public final class SmearglesPixelArtManager {
 
         clearCanvas(world, canvasOrigin, clearFootprint);
         canvasFootprints.put(canvasKey, nextFootprint);
-        activeRound = new ActiveRound(world, canvasOrigin, template);
-        activeRound.artistEntityId = spawnSmeargle(world, origin);
+        activeRound = new ActiveRound(world, configuredCanvas.dimensionId(), canvasOrigin, template, configuredCanvas.ticksPerPlacement());
+        activeRound.artistEntityId = spawnSmeargle(world, canvasOrigin);
 
         broadcast(
             world.getServer(),
@@ -203,7 +238,7 @@ public final class SmearglesPixelArtManager {
                 + "<gray>Use</gray> <yellow>/guess &lt;pokemon&gt;</yellow> <gray>to answer first.</gray>"
         );
         broadcast(world.getServer(), PokemonHintFormatter.lengthHint(template));
-        return true;
+        return StartResult.STARTED;
     }
 
     private void finishRound(MinecraftServer server, boolean silent) {
@@ -299,11 +334,23 @@ public final class SmearglesPixelArtManager {
         server.getPlayerManager().broadcast(MiniMessageText.deserialize(server, message), false);
     }
 
+    @Nullable
+    private ConfiguredCanvas configuredCanvas(MinecraftServer server) {
+        SmearglesPixelArtConfig config = configSupplier.get();
+        ServerWorld world = server.getWorld(config.dimensionKey());
+        if (world == null) {
+            return null;
+        }
+        return new ConfiguredCanvas(world, config.dimension(), config.canvasOrigin(), config.ticksPerPlacement());
+    }
+
     private static final class ActiveRound {
         private final RegistryKey<World> worldKey;
+        private final String dimensionId;
         private final BlockPos origin;
         private final PixelArtTemplate template;
         private final java.util.List<PixelArtTemplate.BlockPlacement> revealOrder;
+        private final int ticksPerPlacement;
         private int nextPlacementIndex;
         private int cooldownTicks;
         private boolean firstLetterHintSent;
@@ -311,16 +358,28 @@ public final class SmearglesPixelArtManager {
         @Nullable
         private UUID artistEntityId;
 
-        private ActiveRound(ServerWorld world, BlockPos origin, PixelArtTemplate template) {
+        private ActiveRound(ServerWorld world, String dimensionId, BlockPos origin, PixelArtTemplate template, int ticksPerPlacement) {
             this.worldKey = world.getRegistryKey();
+            this.dimensionId = dimensionId;
             this.origin = origin;
             this.template = template;
             this.revealOrder = template.revealOrder();
-            this.cooldownTicks = TICKS_PER_PLACEMENT;
+            this.ticksPerPlacement = ticksPerPlacement;
+            this.cooldownTicks = ticksPerPlacement;
         }
     }
 
     public record RecordedTemplate(String templateName, String pokemon, int width, int height, Path path) {
+    }
+
+    public enum StartResult {
+        STARTED,
+        ROUND_ALREADY_ACTIVE,
+        TEMPLATE_NOT_FOUND,
+        CONFIGURED_DIMENSION_UNAVAILABLE
+    }
+
+    private record ConfiguredCanvas(ServerWorld world, String dimensionId, BlockPos origin, int ticksPerPlacement) {
     }
 
     private record CanvasKey(RegistryKey<World> worldKey, BlockPos origin) {
