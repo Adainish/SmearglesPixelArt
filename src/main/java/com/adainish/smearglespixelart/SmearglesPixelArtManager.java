@@ -254,7 +254,6 @@ public final class SmearglesPixelArtManager {
                 + "<gold>" + points + "</gold> <gray>point" + (points == 1 ? "" : "s") + " (total: " + totalPoints + ").</gray>"
         );
         playRoundSound(player.getServer(), activeRound.origin, SmeargleMinigameSounds.correctGuess());
-        beginCleanup(player.getServer());
         return true;
     }
 
