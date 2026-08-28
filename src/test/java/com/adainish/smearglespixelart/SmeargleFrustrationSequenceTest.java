@@ -11,7 +11,7 @@ class SmeargleFrustrationSequenceTest {
     @Test
     void startsStillThenWalksTowardAudience() {
         List<SmeargleFrustrationSequence.Step> steps = SmeargleFrustrationSequence.stepsForStage(1);
-        int pause = SmeargleFrustrationSequence.PAUSE_TICKS;
+        int pause = SmeargleFrustrationSequence.pauseTicks();
 
         assertTrue(steps.size() >= 60);
         assertEquals(0.0D, steps.getFirst().forwardOffset());
@@ -30,7 +30,7 @@ class SmeargleFrustrationSequenceTest {
     @Test
     void looksBackAndEndsReadyToPaintAgain() {
         List<SmeargleFrustrationSequence.Step> steps = SmeargleFrustrationSequence.stepsForStage(1);
-        int pause = SmeargleFrustrationSequence.PAUSE_TICKS;
+        int pause = SmeargleFrustrationSequence.pauseTicks();
 
         int lookBackIndex = -1;
         for (int index = 0; index < steps.size(); index++) {
