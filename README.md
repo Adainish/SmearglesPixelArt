@@ -117,7 +117,7 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 ### Round cleanup
 
 - After a round ends, Smeargle waits 5 seconds before clearing the sprite.
-- Cleanup then happens on the configured canvas at roughly 5x the normal painting pace.
+- Cleanup then happens on the configured canvas in batches sized to finish within about 10 seconds total, including the 5-second delay above.
 - This delay leaves room for future end-of-round animations before the art is removed.
 
 ### Permissions
@@ -138,7 +138,7 @@ This repository now contains an initial server-side Fabric sidemod implementatio
   - and the possible MiniMessage chat lines Smeargle can use when he becomes annoyed, frustrated, or furious.
 - Slower painting can be achieved by increasing `ticksPerPlacement`.
 - Supported directions include cardinals and diagonals such as `north`, `east`, `southwest`, and `northwest`.
-- Smeargle now paints from the front of the canvas, repositions before climbing temporary scaffolding upward one step at a time for taller sections, climbs back down when needed, and removes that support without dropping items.
+- Smeargle now paints from the front of the canvas and snaps directly to each working position instead of building or tearing down temporary scaffolding while painting and cleanup run.
 - Smeargle's native mob AI is disabled during rounds so he only moves when the event logic tells him to.
 
 ### Built-in templates

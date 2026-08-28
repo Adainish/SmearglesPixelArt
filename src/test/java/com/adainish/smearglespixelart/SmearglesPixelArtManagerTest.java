@@ -1,6 +1,7 @@
 package com.adainish.smearglespixelart;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.Set;
@@ -18,15 +19,26 @@ class SmearglesPixelArtManagerTest {
     }
 
     @Test
-    void scaffoldingRunsFasterThanPainting() {
-        assertEquals(7, SmeargleScaffoldingPacing.ticksPerPlacement(20));
-        assertEquals(1, SmeargleScaffoldingPacing.ticksPerPlacement(2));
-        assertEquals(1, SmeargleScaffoldingPacing.ticksPerPlacement(1));
-        assertEquals(3, SmeargleScaffoldingPacing.ticksPerPlacement(10));
+    void buildPacingCapsLargeTemplatesAtFiveMinutes() {
+        int blocksPerStep = SmeargleRoundPacing.buildBlocksPerStep(900, 20);
+        int steps = Math.ceilDiv(900, blocksPerStep);
+
+        assertEquals(3, blocksPerStep);
+        assertTrue(steps * 20 <= SmeargleRoundPacing.MAX_BUILD_DURATION_TICKS);
     }
 
     @Test
-    void cleanupRunsFasterThanPainting() {
+    void cleanupPacingCapsLargeTemplatesAtFiveSecondsAfterDelay() {
+        int cleanupTicksPerPlacement = SmeargleCleanupPacing.ticksPerPlacement(20);
+        int blocksPerStep = SmeargleRoundPacing.cleanupBlocksPerStep(600, cleanupTicksPerPlacement);
+        int steps = Math.ceilDiv(600, blocksPerStep);
+
+        assertEquals(24, blocksPerStep);
+        assertTrue(steps * cleanupTicksPerPlacement <= SmeargleRoundPacing.MAX_CLEANUP_DURATION_TICKS);
+    }
+
+    @Test
+    void cleanupStillUsesFastPerTickCadence() {
         assertEquals(4, SmeargleCleanupPacing.ticksPerPlacement(20));
         assertEquals(1, SmeargleCleanupPacing.ticksPerPlacement(5));
         assertEquals(1, SmeargleCleanupPacing.ticksPerPlacement(1));

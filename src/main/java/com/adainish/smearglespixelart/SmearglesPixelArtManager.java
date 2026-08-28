@@ -292,13 +292,18 @@ public final class SmearglesPixelArtManager {
                 return;
             }
 
-            PixelArtTemplate.BlockPlacement placement = activeRound.cleanupOrder.get(activeRound.nextCleanupIndex);
-            if (!prepareSmeargleForPlacement(world, activeRound.origin, placement)) {
-                activeRound.cooldownTicks = activeRound.cleanupTicksPerPlacement;
+            int clearedThisStep = 0;
+            while (activeRound.nextCleanupIndex < activeRound.cleanupOrder.size() && clearedThisStep < activeRound.cleanupBlocksPerStep) {
+                PixelArtTemplate.BlockPlacement placement = activeRound.cleanupOrder.get(activeRound.nextCleanupIndex);
+                prepareSmeargleForPlacement(world, activeRound.origin, placement);
+                placeBlock(world, activeRound.direction.transform(activeRound.origin, placement), "minecraft:air");
+                activeRound.nextCleanupIndex++;
+                clearedThisStep++;
+            }
+            if (activeRound.nextCleanupIndex >= activeRound.cleanupOrder.size()) {
+                finishRound(server, false);
                 return;
             }
-            placeBlock(world, activeRound.direction.transform(activeRound.origin, placement), "minecraft:air");
-            activeRound.nextCleanupIndex++;
             activeRound.cooldownTicks = activeRound.cleanupTicksPerPlacement;
             return;
         }
@@ -312,39 +317,43 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
-        PixelArtTemplate.BlockPlacement placement = activeRound.revealOrder.get(activeRound.nextPlacementIndex);
-        if (!prepareSmeargleForPlacement(world, activeRound.origin, placement)) {
-            activeRound.cooldownTicks = activeRound.scaffoldingTicksPerPlacement;
-            return;
+        int placedThisStep = 0;
+        while (activeRound.nextPlacementIndex < activeRound.revealOrder.size() && placedThisStep < activeRound.paintBlocksPerStep) {
+            PixelArtTemplate.BlockPlacement placement = activeRound.revealOrder.get(activeRound.nextPlacementIndex);
+            prepareSmeargleForPlacement(world, activeRound.origin, placement);
+            placeBlock(world, activeRound.direction.transform(activeRound.origin, placement), placement.blockId());
+            activeRound.nextPlacementIndex++;
+            placedThisStep++;
+
+            if (activeRound.nextPlacementIndex % 8 == 0 || activeRound.nextPlacementIndex == activeRound.revealOrder.size()) {
+                broadcast(
+                    server,
+                    "<gray>Smeargle has revealed <yellow>" + activeRound.nextPlacementIndex + "</yellow>/<yellow>"
+                        + activeRound.revealOrder.size() + "</yellow> blocks.</gray>"
+                );
+            }
+
+            int total = activeRound.revealOrder.size();
+            if (total == 0) {
+                return;
+            }
+
+            long revealed = activeRound.nextPlacementIndex;
+            long totalBlocks = total;
+            if (!activeRound.firstLetterHintSent && revealed * 3L >= totalBlocks) {
+                activeRound.firstLetterHintSent = true;
+                broadcast(server, PokemonHintFormatter.firstLetterHint(activeRound.template));
+            }
+            if (!activeRound.silhouetteHintSent && revealed * 3L >= totalBlocks * 2L) {
+                activeRound.silhouetteHintSent = true;
+                broadcast(server, PokemonHintFormatter.silhouetteHint(activeRound.template));
+            }
+            tryTriggerAngerReaction(world);
+            if (activeRound.phase != RoundPhase.PAINTING) {
+                return;
+            }
         }
-        placeBlock(world, activeRound.direction.transform(activeRound.origin, placement), placement.blockId());
-        activeRound.nextPlacementIndex++;
         activeRound.cooldownTicks = activeRound.ticksPerPlacement;
-
-        if (activeRound.nextPlacementIndex % 8 == 0 || activeRound.nextPlacementIndex == activeRound.revealOrder.size()) {
-            broadcast(
-                server,
-                "<gray>Smeargle has revealed <yellow>" + activeRound.nextPlacementIndex + "</yellow>/<yellow>"
-                    + activeRound.revealOrder.size() + "</yellow> blocks.</gray>"
-            );
-        }
-
-        int total = activeRound.revealOrder.size();
-        if (total == 0) {
-            return;
-        }
-
-        long revealed = activeRound.nextPlacementIndex;
-        long totalBlocks = total;
-        if (!activeRound.firstLetterHintSent && revealed * 3L >= totalBlocks) {
-            activeRound.firstLetterHintSent = true;
-            broadcast(server, PokemonHintFormatter.firstLetterHint(activeRound.template));
-        }
-        if (!activeRound.silhouetteHintSent && revealed * 3L >= totalBlocks * 2L) {
-            activeRound.silhouetteHintSent = true;
-            broadcast(server, PokemonHintFormatter.silhouetteHint(activeRound.template));
-        }
-        tryTriggerAngerReaction(world);
     }
 
     public void stop(MinecraftServer server, String message) {
@@ -627,7 +636,25 @@ public final class SmearglesPixelArtManager {
 
     private boolean prepareSmeargleForPlacement(ServerWorld world, BlockPos origin, PixelArtTemplate.BlockPlacement placement) {
         SmeargleSupportColumn supportColumn = SmeargleSupportColumn.forPlacement(activeRound.direction, origin, placement);
-        return moveSmeargleTowardColumn(world, supportColumn, activeRound.direction.yaw());
+        if (activeRound == null || activeRound.artistEntityId == null) {
+            return true;
+        }
+
+        Entity entity = world.getEntity(activeRound.artistEntityId);
+        if (entity == null) {
+            return true;
+        }
+
+        activeRound.currentSupportAnchor = supportColumn.anchor();
+        activeRound.currentStandingY = supportColumn.standingY();
+        entity.refreshPositionAndAngles(
+            activeRound.direction.artistX(supportColumn.anchor()),
+            activeRound.direction.artistY(supportColumn.standingY()),
+            activeRound.direction.artistZ(supportColumn.anchor()),
+            activeRound.direction.yaw(),
+            0.0F
+        );
+        return true;
     }
 
     private boolean moveSmeargleTowardColumn(ServerWorld world, SmeargleSupportColumn targetColumn, float yaw) {
@@ -917,7 +944,8 @@ public final class SmearglesPixelArtManager {
         private final java.util.List<PixelArtTemplate.BlockPlacement> cleanupOrder;
         private final int ticksPerPlacement;
         private final int cleanupTicksPerPlacement;
-        private final int scaffoldingTicksPerPlacement;
+        private final int paintBlocksPerStep;
+        private final int cleanupBlocksPerStep;
         private final int roundNumber;
         private final int totalRounds;
         private RoundPhase phase;
@@ -958,7 +986,8 @@ public final class SmearglesPixelArtManager {
             this.cleanupOrder = this.revealOrder.reversed();
             this.ticksPerPlacement = ticksPerPlacement;
             this.cleanupTicksPerPlacement = SmeargleCleanupPacing.ticksPerPlacement(ticksPerPlacement);
-            this.scaffoldingTicksPerPlacement = SmeargleScaffoldingPacing.ticksPerPlacement(ticksPerPlacement);
+            this.paintBlocksPerStep = SmeargleRoundPacing.buildBlocksPerStep(this.revealOrder.size(), ticksPerPlacement);
+            this.cleanupBlocksPerStep = SmeargleRoundPacing.cleanupBlocksPerStep(this.cleanupOrder.size(), this.cleanupTicksPerPlacement);
             this.cooldownTicks = ticksPerPlacement;
             this.phase = RoundPhase.PAINTING;
             this.roundNumber = roundNumber;
