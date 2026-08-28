@@ -415,6 +415,7 @@ public final class SmearglesPixelArtManager {
             canvasOrigin,
             template,
             configuredCanvas.ticksPerPlacement(),
+            random,
             roundNumber,
             totalRounds
         );
@@ -990,6 +991,7 @@ public final class SmearglesPixelArtManager {
             BlockPos origin,
             PixelArtTemplate template,
             int ticksPerPlacement,
+            Random random,
             int roundNumber,
             int totalRounds
         ) {
@@ -998,7 +1000,7 @@ public final class SmearglesPixelArtManager {
             this.direction = direction;
             this.origin = origin;
             this.template = template;
-            this.revealOrder = template.revealOrder();
+            this.revealOrder = template.revealOrder(PixelArtTemplate.fillPatternForRound(roundNumber, totalRounds), random);
             this.cleanupOrder = this.revealOrder.reversed();
             this.ticksPerPlacement = ticksPerPlacement;
             this.cleanupTicksPerPlacement = SmeargleCleanupPacing.ticksPerPlacement(ticksPerPlacement);

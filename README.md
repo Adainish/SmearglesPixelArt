@@ -39,6 +39,7 @@ Each round uses one predefined Pokémon pixel-art schematic.
 
 - Smeargle should feel like the active artist for the event.
 - The build must be revealed progressively, one step at a time, from the selected schematic.
+- Reveal order now shifts through progressively harder fill patterns each round, ending in randomized placement for the hardest rounds.
 - The reveal pace should be slow enough for deduction and fast enough to keep rounds engaging.
 - Only blocks defined by the schematic should be placed during a round.
 
