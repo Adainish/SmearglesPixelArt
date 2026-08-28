@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Random;
 import net.minecraft.util.math.BlockPos;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,6 +23,9 @@ class SmearglesPixelArtConfigTest {
         assertEquals(CanvasDirection.NORTH, config.direction());
         assertEquals(new BlockPos(0, 80, 0), config.canvasOrigin());
         assertEquals(20, config.ticksPerPlacement());
+        assertEquals(3, config.angerMessagesForStage(1).size());
+        assertEquals(3, config.angerMessagesForStage(2).size());
+        assertEquals(3, config.angerMessagesForStage(3).size());
     }
 
     @Test
@@ -38,7 +42,12 @@ class SmearglesPixelArtConfigTest {
                 "y": 64,
                 "z": -8
               },
-              "ticksPerPlacement": 0
+              "ticksPerPlacement": 0,
+              "angerMessages": {
+                "annoyed": ["  <yellow>Custom annoyed</yellow>  ", "", null],
+                "frustrated": [],
+                "furious": ["<red>Custom furious</red>"]
+              }
             }
             """
         );
@@ -49,5 +58,44 @@ class SmearglesPixelArtConfigTest {
         assertEquals(CanvasDirection.NORTHWEST, config.direction());
         assertEquals(new BlockPos(12, 64, -8), config.canvasOrigin());
         assertEquals(1, config.ticksPerPlacement());
+        assertEquals(java.util.List.of("<yellow>Custom annoyed</yellow>"), config.angerMessagesForStage(1));
+        assertEquals(3, config.angerMessagesForStage(2).size());
+        assertEquals(java.util.List.of("<red>Custom furious</red>"), config.angerMessagesForStage(3));
+    }
+
+    @Test
+    void selectsConfiguredMessageForStage(@TempDir Path tempDir) throws IOException {
+        Path path = tempDir.resolve("config.json");
+        Files.writeString(
+            path,
+            """
+            {
+              "angerMessages": {
+                "annoyed": ["<yellow>First</yellow>", "<yellow>Second</yellow>"],
+                "frustrated": ["<gold>Only frustrated</gold>"],
+                "furious": ["<red>Only furious</red>"]
+              }
+            }
+            """
+        );
+
+        SmearglesPixelArtConfig config = SmearglesPixelArtConfig.load(path);
+
+        assertEquals("<yellow>Second</yellow>", config.angerMessage(1, new FixedRandom(1)));
+        assertEquals("<gold>Only frustrated</gold>", config.angerMessage(2, new FixedRandom(0)));
+        assertEquals("<red>Only furious</red>", config.angerMessage(99, new FixedRandom(0)));
+    }
+
+    private static final class FixedRandom extends Random {
+        private final int value;
+
+        private FixedRandom(int value) {
+            this.value = value;
+        }
+
+        @Override
+        public int nextInt(int bound) {
+            return Math.floorMod(value, bound);
+        }
     }
 }
