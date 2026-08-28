@@ -1,8 +1,6 @@
 package com.adainish.smearglespixelart;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.Set;
@@ -50,10 +48,19 @@ class SmearglesPixelArtManagerTest {
     void correctGuessAnnouncementDoesNotRevealAnswer() {
         String message = GuessAnnouncementFormatter.correctGuessAnnouncement("Alice", 7, 19);
 
-        assertTrue(message.contains("Alice"));
-        assertTrue(message.contains("got the answer"));
-        assertTrue(message.contains("7"));
-        assertTrue(message.contains("19"));
-        assertFalse(message.contains("guessed</gray> <gold>"));
+        assertEquals(
+            "<green><bold>Alice</bold></green> <gray>got the answer for</gray> <gold>7</gold> <gray>points (total: 19).</gray>",
+            message
+        );
+    }
+
+    @Test
+    void correctGuessAnnouncementUsesSingularPointWhenNeeded() {
+        String message = GuessAnnouncementFormatter.correctGuessAnnouncement("Alice", 1, 19);
+
+        assertEquals(
+            "<green><bold>Alice</bold></green> <gray>got the answer for</gray> <gold>1</gold> <gray>point (total: 19).</gray>",
+            message
+        );
     }
 }
