@@ -18,6 +18,14 @@ class SmearglesPixelArtManagerTest {
     }
 
     @Test
+    void scaffoldingRunsFasterThanPainting() {
+        assertEquals(7, SmeargleScaffoldingPacing.ticksPerPlacement(20));
+        assertEquals(1, SmeargleScaffoldingPacing.ticksPerPlacement(2));
+        assertEquals(1, SmeargleScaffoldingPacing.ticksPerPlacement(1));
+        assertEquals(3, SmeargleScaffoldingPacing.ticksPerPlacement(10));
+    }
+
+    @Test
     void cleanupRunsFasterThanPainting() {
         assertEquals(4, SmeargleCleanupPacing.ticksPerPlacement(20));
         assertEquals(1, SmeargleCleanupPacing.ticksPerPlacement(5));

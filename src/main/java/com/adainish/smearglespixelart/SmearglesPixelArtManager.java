@@ -312,7 +312,7 @@ public final class SmearglesPixelArtManager {
 
         PixelArtTemplate.BlockPlacement placement = activeRound.revealOrder.get(activeRound.nextPlacementIndex);
         if (!prepareSmeargleForPlacement(world, activeRound.origin, placement)) {
-            activeRound.cooldownTicks = activeRound.ticksPerPlacement;
+            activeRound.cooldownTicks = activeRound.scaffoldingTicksPerPlacement;
             return;
         }
         placeBlock(world, activeRound.direction.transform(activeRound.origin, placement), placement.blockId());
@@ -909,6 +909,7 @@ public final class SmearglesPixelArtManager {
         private final java.util.List<PixelArtTemplate.BlockPlacement> cleanupOrder;
         private final int ticksPerPlacement;
         private final int cleanupTicksPerPlacement;
+        private final int scaffoldingTicksPerPlacement;
         private final int roundNumber;
         private final int totalRounds;
         private RoundPhase phase;
@@ -949,6 +950,7 @@ public final class SmearglesPixelArtManager {
             this.cleanupOrder = this.revealOrder.reversed();
             this.ticksPerPlacement = ticksPerPlacement;
             this.cleanupTicksPerPlacement = SmeargleCleanupPacing.ticksPerPlacement(ticksPerPlacement);
+            this.scaffoldingTicksPerPlacement = SmeargleScaffoldingPacing.ticksPerPlacement(ticksPerPlacement);
             this.cooldownTicks = ticksPerPlacement;
             this.phase = RoundPhase.PAINTING;
             this.roundNumber = roundNumber;
