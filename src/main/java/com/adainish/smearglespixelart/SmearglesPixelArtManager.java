@@ -272,7 +272,9 @@ public final class SmearglesPixelArtManager {
     }
 
     private void finishRound(MinecraftServer server, boolean silent) {
-        clearActiveCanvas(server);
+        if (activeRound != null && activeRound.phase != RoundPhase.CLEARING) {
+            clearActiveCanvas(server);
+        }
         despawnSmeargle(server);
         activeRound = null;
         if (!silent) {

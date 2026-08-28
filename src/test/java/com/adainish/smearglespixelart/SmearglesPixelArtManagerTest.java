@@ -7,6 +7,6 @@ import org.junit.jupiter.api.Test;
 class SmearglesPixelArtManagerTest {
     @Test
     void usesFiveSecondCleanupDelay() {
-        assertEquals(100, SmearglesPixelArtManager.CLEANUP_DELAY_TICKS);
+        assertEquals(20 * 5, SmearglesPixelArtManager.CLEANUP_DELAY_TICKS);
     }
 }
