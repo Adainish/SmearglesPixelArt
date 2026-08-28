@@ -13,31 +13,42 @@ final class SmeargleFrustrationSequence {
 
         steps.add(step(0.0D, FacingMode.ART));
         steps.add(step(0.0D, FacingMode.ART));
+        steps.add(step(0.0D, FacingMode.AUDIENCE));
+        steps.add(step(0.0D, FacingMode.AUDIENCE));
         steps.add(step(0.25D, FacingMode.AUDIENCE));
-        steps.add(step(0.55D, FacingMode.AUDIENCE));
-        steps.add(step(0.85D, FacingMode.AUDIENCE));
-        steps.add(step(1.15D, FacingMode.AUDIENCE));
-        steps.add(step(1.15D, FacingMode.AUDIENCE));
+        steps.add(step(0.5D, FacingMode.AUDIENCE));
+        steps.add(step(0.75D, FacingMode.AUDIENCE));
+        steps.add(step(1.0D, FacingMode.AUDIENCE));
+        steps.add(step(1.25D, FacingMode.AUDIENCE));
+        steps.add(step(1.25D, FacingMode.AUDIENCE, clampedStage >= 2, clampedStage >= 2));
 
         if (clampedStage >= 2) {
-            steps.add(step(1.15D, FacingMode.AUDIENCE, true, true));
+            steps.add(step(1.45D, FacingMode.AUDIENCE, true, true));
+            steps.add(step(1.45D, FacingMode.AUDIENCE, true, true));
         }
         if (clampedStage >= 3) {
-            steps.add(step(1.35D, FacingMode.AUDIENCE, true, true));
+            steps.add(step(1.7D, FacingMode.AUDIENCE, true, true));
+            steps.add(step(1.7D, FacingMode.AUDIENCE, true, true));
         }
 
-        steps.add(step(1.15D, FacingMode.ART, false, clampedStage >= 2));
-        steps.add(step(0.85D, FacingMode.ART));
-        steps.add(step(0.55D, FacingMode.ART));
-        steps.add(step(0.25D, FacingMode.ART));
+        steps.add(step(1.25D, FacingMode.ART, false, clampedStage >= 2));
+        steps.add(step(1.0D, FacingMode.ART));
+        steps.add(step(0.75D, FacingMode.ART));
+        steps.add(step(0.5D, FacingMode.ART));
+        steps.add(step(0.35D, FacingMode.ART));
+        steps.add(step(0.35D, FacingMode.ART, clampedStage >= 2, clampedStage >= 2));
 
         if (clampedStage >= 3) {
-            steps.add(step(0.25D, FacingMode.ART, true, true));
+            steps.add(step(0.35D, FacingMode.ART, true, true));
         }
 
-        steps.add(step(0.95D, FacingMode.AUDIENCE, false, clampedStage >= 2));
-        steps.add(step(1.35D, FacingMode.AUDIENCE, clampedStage >= 2, clampedStage >= 2));
-        steps.add(step(clampedStage >= 3 ? 1.75D : 1.55D, FacingMode.AUDIENCE, clampedStage >= 2, true));
+        steps.add(step(0.65D, FacingMode.AUDIENCE, false, clampedStage >= 2));
+        steps.add(step(1.05D, FacingMode.AUDIENCE, clampedStage >= 2, clampedStage >= 2));
+        steps.add(step(1.45D, FacingMode.AUDIENCE, clampedStage >= 2, clampedStage >= 2));
+        steps.add(step(clampedStage >= 3 ? 1.95D : 1.7D, FacingMode.AUDIENCE, clampedStage >= 2, true));
+        steps.add(step(clampedStage >= 3 ? 2.1D : 1.85D, FacingMode.AUDIENCE, clampedStage >= 2, true));
+        steps.add(step(1.25D, FacingMode.AUDIENCE, false, clampedStage >= 2));
+        steps.add(step(0.0D, FacingMode.ART));
         steps.add(step(0.0D, FacingMode.ART));
 
         return List.copyOf(steps);

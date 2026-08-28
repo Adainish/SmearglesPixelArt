@@ -12,20 +12,40 @@ class SmeargleFrustrationSequenceTest {
     void startsStillThenWalksTowardAudience() {
         List<SmeargleFrustrationSequence.Step> steps = SmeargleFrustrationSequence.stepsForStage(1);
 
+        assertTrue(steps.size() >= 20);
         assertEquals(0.0D, steps.getFirst().forwardOffset());
         assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.getFirst().facingMode());
         assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.get(1).facingMode());
         assertEquals(SmeargleFrustrationSequence.FacingMode.AUDIENCE, steps.get(2).facingMode());
-        assertTrue(steps.get(3).forwardOffset() > steps.get(2).forwardOffset());
+        assertEquals(0.0D, steps.get(2).forwardOffset());
+        assertEquals(SmeargleFrustrationSequence.FacingMode.AUDIENCE, steps.get(3).facingMode());
+        assertEquals(0.0D, steps.get(3).forwardOffset());
         assertTrue(steps.get(4).forwardOffset() > steps.get(3).forwardOffset());
         assertTrue(steps.get(5).forwardOffset() > steps.get(4).forwardOffset());
+        assertTrue(steps.get(6).forwardOffset() > steps.get(5).forwardOffset());
     }
 
     @Test
     void looksBackAndEndsReadyToPaintAgain() {
         List<SmeargleFrustrationSequence.Step> steps = SmeargleFrustrationSequence.stepsForStage(1);
 
-        assertTrue(steps.stream().anyMatch(step -> step.facingMode() == SmeargleFrustrationSequence.FacingMode.ART && step.forwardOffset() > 0.0D));
+        int lookBackIndex = -1;
+        for (int index = 0; index < steps.size(); index++) {
+            SmeargleFrustrationSequence.Step step = steps.get(index);
+            if (step.facingMode() == SmeargleFrustrationSequence.FacingMode.ART && step.forwardOffset() > 0.0D) {
+                lookBackIndex = index;
+                break;
+            }
+        }
+
+        assertTrue(lookBackIndex > 0);
+        assertTrue(steps.get(lookBackIndex + 1).forwardOffset() < steps.get(lookBackIndex).forwardOffset());
+        double retreatFloor = steps.get(lookBackIndex + 4).forwardOffset();
+        double surgePeak = steps.subList(lookBackIndex + 5, steps.size()).stream()
+            .mapToDouble(SmeargleFrustrationSequence.Step::forwardOffset)
+            .max()
+            .orElse(0.0D);
+        assertTrue(surgePeak > retreatFloor);
         assertEquals(0.0D, steps.getLast().forwardOffset());
         assertEquals(SmeargleFrustrationSequence.FacingMode.ART, steps.getLast().facingMode());
     }
