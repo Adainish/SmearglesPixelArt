@@ -185,6 +185,10 @@ public final class SmearglesPixelArtManager {
         return activeSession.register(player) ? JoinResult.JOINED : JoinResult.ALREADY_JOINED;
     }
 
+    public boolean shouldBlockChat(UUID playerId, boolean hasBypassPermission) {
+        return SmeargleChatGate.shouldBlock(activeRound != null, hasBypassPermission, activeSession == null ? Set.of() : activeSession.registeredPlayerIds, playerId);
+    }
+
     public ForceStartResult forceStartRegistration(MinecraftServer server) {
         if (activeSession == null || !activeSession.registrationOpen()) {
             return ForceStartResult.NO_REGISTRATION_ACTIVE;
@@ -421,7 +425,7 @@ public final class SmearglesPixelArtManager {
         broadcastToParticipants(
             world.getServer(),
             "<aqua><bold>Round " + roundNumber + "/" + totalRounds + " has started!</bold></aqua> "
-                + "<gray>Use</gray> <yellow>/guess &lt;pokemon&gt;</yellow> <gray>to score points.</gray>"
+                + "<gray>Use</gray> <yellow>/guess <pokemon></yellow> <gray>to score points.</gray>"
         );
         broadcastToParticipants(world.getServer(), "<gray>Scoring:</gray> <gold>10</gold><gray> points for first correct, down to a minimum of </gray><gold>1</gold><gray>.</gray>");
         broadcastToParticipants(world.getServer(), PokemonHintFormatter.lengthHint(template));
