@@ -37,6 +37,10 @@ public final class SmearglesPixelArtCommands {
                             context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>Rounds must be at least 1.</red>"));
                             yield 0;
                         }
+                        case NO_ACTIVE_SESSION -> {
+                            context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>No active session was available to start.</red>"));
+                            yield 0;
+                        }
                     })
                     .then(CommandManager.argument("rounds", IntegerArgumentType.integer(1))
                         .executes(context -> switch (SmearglesPixelArtMod.getManager().startRandom(
@@ -58,6 +62,10 @@ public final class SmearglesPixelArtCommands {
                             }
                             case INVALID_ROUND_COUNT -> {
                                 context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>Rounds must be at least 1.</red>"));
+                                yield 0;
+                            }
+                            case NO_ACTIVE_SESSION -> {
+                                context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>No active session was available to start.</red>"));
                                 yield 0;
                             }
                         })
@@ -87,6 +95,10 @@ public final class SmearglesPixelArtCommands {
                                 context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>Rounds must be at least 1.</red>"));
                                 yield 0;
                             }
+                            case NO_ACTIVE_SESSION -> {
+                                context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>No active session was available to start.</red>"));
+                                yield 0;
+                            }
                         })
                         .then(CommandManager.argument("rounds", IntegerArgumentType.integer(1))
                             .executes(context -> switch (SmearglesPixelArtMod.getManager().startTemplate(
@@ -111,6 +123,10 @@ public final class SmearglesPixelArtCommands {
                                     context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>Rounds must be at least 1.</red>"));
                                     yield 0;
                                 }
+                                case NO_ACTIVE_SESSION -> {
+                                    context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>No active session was available to start.</red>"));
+                                    yield 0;
+                                }
                             })
                         )
                     )
@@ -122,7 +138,7 @@ public final class SmearglesPixelArtCommands {
                         context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<gray>No active round to stop.</gray>"), false);
                         return 0;
                     }
-                    SmearglesPixelArtMod.getManager().stop(context.getSource().getServer(), "<yellow>An admin stopped the current Smeargle round.</yellow>");
+                    SmearglesPixelArtMod.getManager().stop(context.getSource().getServer(), "<yellow>An admin stopped the current Smeargle session.</yellow>");
                     return 1;
                 })
             )

@@ -367,7 +367,7 @@ public final class SmearglesPixelArtManager {
 
     private StartResult startNextRound(ConfiguredCanvas configuredCanvas) {
         if (activeSession == null) {
-            return StartResult.INVALID_ROUND_COUNT;
+            return StartResult.NO_ACTIVE_SESSION;
         }
         int roundNumber = activeSession.startRound();
         return start(
@@ -421,11 +421,9 @@ public final class SmearglesPixelArtManager {
         if (activeSession == null || !activeSession.registrationOpen()) {
             return;
         }
+        activeSession.tickRegistration();
         if (activeSession.registrationTicksRemaining() > 0) {
-            activeSession.tickRegistration();
-            if (activeSession.registrationTicksRemaining() > 0) {
-                return;
-            }
+            return;
         }
         if (!activeSession.hasRegisteredPlayers()) {
             broadcast(server, "<gray>Smeargle registration ended with no participants, so the session was cancelled.</gray>");
@@ -1031,7 +1029,8 @@ public final class SmearglesPixelArtManager {
         ROUND_ALREADY_ACTIVE,
         TEMPLATE_NOT_FOUND,
         CONFIGURED_DIMENSION_UNAVAILABLE,
-        INVALID_ROUND_COUNT
+        INVALID_ROUND_COUNT,
+        NO_ACTIVE_SESSION
     }
 
     public enum JoinResult {
