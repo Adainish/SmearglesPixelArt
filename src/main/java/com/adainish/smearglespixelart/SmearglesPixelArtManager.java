@@ -2,11 +2,13 @@ package com.adainish.smearglespixelart;
 
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import java.io.IOException;
+import java.util.HashSet;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import net.minecraft.block.Block;
@@ -27,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 public final class SmearglesPixelArtManager {
     static final int CLEANUP_DELAY_TICKS = 20 * 5;
     private static final String SMEARGLE_PROPERTIES = "species=smeargle level=50";
+    private static final BlockState SMEARGLE_SUPPORT_BLOCK = Blocks.SCAFFOLDING.getDefaultState();
 
     private final PixelArtTemplateRegistry templates;
     private final Path templateDirectory;
@@ -241,6 +244,7 @@ public final class SmearglesPixelArtManager {
         }
 
         clearActiveCanvas(server);
+        clearTemporarySupport(server);
         despawnSmeargle(server);
         activeRound = null;
         broadcast(server, message);
@@ -277,6 +281,7 @@ public final class SmearglesPixelArtManager {
         if (activeRound != null && activeRound.phase != RoundPhase.CLEARING) {
             clearActiveCanvas(server);
         }
+        clearTemporarySupport(server);
         despawnSmeargle(server);
         activeRound = null;
         if (!silent) {
@@ -330,10 +335,11 @@ public final class SmearglesPixelArtManager {
             entity.setCustomName(Text.literal("Smeargle"));
             entity.setCustomNameVisible(true);
             entity.setInvulnerable(true);
+            BlockPos supportAnchor = direction.supportAnchor(origin);
             entity.refreshPositionAndAngles(
-                direction.artistX(origin),
-                origin.getY(),
-                direction.artistZ(origin),
+                direction.artistX(supportAnchor),
+                direction.artistY(origin.getY()),
+                direction.artistZ(supportAnchor),
                 direction.yaw(),
                 0.0F
             );
@@ -356,14 +362,55 @@ public final class SmearglesPixelArtManager {
             return;
         }
 
-        BlockPos blockPos = activeRound.direction.transform(origin, placement);
+        SmeargleSupportColumn supportColumn = SmeargleSupportColumn.forPlacement(activeRound.direction, origin, placement);
+        syncTemporarySupport(world, supportColumn);
         entity.refreshPositionAndAngles(
-            activeRound.direction.artistX(blockPos),
-            origin.getY() + Math.max(placement.y() - 1, 0),
-            activeRound.direction.artistZ(blockPos),
+            activeRound.direction.artistX(supportColumn.anchor()),
+            activeRound.direction.artistY(supportColumn.standingY()),
+            activeRound.direction.artistZ(supportColumn.anchor()),
             activeRound.direction.yaw(),
             0.0F
         );
+    }
+
+    private void syncTemporarySupport(ServerWorld world, SmeargleSupportColumn supportColumn) {
+        if (activeRound == null) {
+            return;
+        }
+
+        Set<BlockPos> desiredSupport = supportColumn.supportBlocks();
+        Set<BlockPos> staleSupport = new HashSet<>(activeRound.temporarySupportBlocks);
+        staleSupport.removeAll(desiredSupport);
+        for (BlockPos pos : staleSupport) {
+            world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+            activeRound.temporarySupportBlocks.remove(pos);
+        }
+
+        for (BlockPos pos : desiredSupport) {
+            if (activeRound.temporarySupportBlocks.contains(pos)) {
+                continue;
+            }
+            if (world.getBlockState(pos).isAir()) {
+                world.setBlockState(pos, SMEARGLE_SUPPORT_BLOCK, Block.NOTIFY_ALL);
+                activeRound.temporarySupportBlocks.add(pos.toImmutable());
+            }
+        }
+    }
+
+    private void clearTemporarySupport(MinecraftServer server) {
+        if (activeRound == null || activeRound.temporarySupportBlocks.isEmpty()) {
+            return;
+        }
+
+        ServerWorld world = server.getWorld(activeRound.worldKey);
+        if (world == null) {
+            return;
+        }
+
+        for (BlockPos pos : activeRound.temporarySupportBlocks) {
+            world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+        }
+        activeRound.temporarySupportBlocks.clear();
     }
 
     private void despawnSmeargle(MinecraftServer server) {
@@ -427,6 +474,7 @@ public final class SmearglesPixelArtManager {
         private boolean silhouetteHintSent;
         @Nullable
         private UUID artistEntityId;
+        private final Set<BlockPos> temporarySupportBlocks = new HashSet<>();
 
         private ActiveRound(ServerWorld world, String dimensionId, CanvasDirection direction, BlockPos origin, PixelArtTemplate template, int ticksPerPlacement) {
             this.worldKey = world.getRegistryKey();

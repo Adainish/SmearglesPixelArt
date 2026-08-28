@@ -130,6 +130,7 @@ This repository now contains an initial server-side Fabric sidemod implementatio
   - the number of ticks Smeargle waits between block placements.
 - Slower painting can be achieved by increasing `ticksPerPlacement`.
 - Supported directions include cardinals and diagonals such as `north`, `east`, `southwest`, and `northwest`.
+- Smeargle now builds temporary scaffolding up while painting taller sections and removes that support again as he comes back down.
 
 ### Built-in templates
 

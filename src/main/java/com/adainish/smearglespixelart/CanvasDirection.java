@@ -67,15 +67,19 @@ public enum CanvasDirection {
         return origin.add(worldOffset(placement));
     }
 
-    public double artistX(BlockPos blockPos) {
-        return blockPos.getX() + 0.5D - (this.facingX * 1.5D);
+    public BlockPos supportAnchor(BlockPos blockPos) {
+        return blockPos.add(-this.facingX, 0, -this.facingZ);
     }
 
-    public double artistY(BlockPos blockPos) {
-        return blockPos.getY();
+    public double artistX(BlockPos supportAnchor) {
+        return supportAnchor.getX() + 0.5D;
     }
 
-    public double artistZ(BlockPos blockPos) {
-        return blockPos.getZ() + 0.5D - (this.facingZ * 1.5D);
+    public double artistY(int standingY) {
+        return standingY;
+    }
+
+    public double artistZ(BlockPos supportAnchor) {
+        return supportAnchor.getZ() + 0.5D;
     }
 }
