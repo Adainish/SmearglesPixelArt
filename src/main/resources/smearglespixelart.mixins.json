@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.adainish.smearglespixelart",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ChatMessageMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

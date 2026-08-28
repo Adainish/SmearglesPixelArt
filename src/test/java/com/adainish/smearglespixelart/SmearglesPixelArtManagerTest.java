@@ -1,10 +1,12 @@
 package com.adainish.smearglespixelart;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class SmearglesPixelArtManagerTest {
@@ -82,5 +84,26 @@ class SmearglesPixelArtManagerTest {
             "<green><bold>Alice</bold></green> <gray>got the answer for</gray> <gold>1</gold> <gray>point (total: 19).</gray>",
             message
         );
+    }
+
+    @Test
+    void blocksChatForRegisteredPlayersDuringActiveRounds() {
+        UUID playerId = UUID.randomUUID();
+
+        assertTrue(SmeargleChatGate.shouldBlock(true, Set.of(playerId), playerId));
+    }
+
+    @Test
+    void doesNotBlockChatBeforeRoundStarts() {
+        UUID playerId = UUID.randomUUID();
+
+        assertFalse(SmeargleChatGate.shouldBlock(false, Set.of(playerId), playerId));
+    }
+
+    @Test
+    void doesNotBlockChatForUnregisteredPlayers() {
+        UUID playerId = UUID.randomUUID();
+
+        assertFalse(SmeargleChatGate.shouldBlock(true, Set.of(UUID.randomUUID()), playerId));
     }
 }

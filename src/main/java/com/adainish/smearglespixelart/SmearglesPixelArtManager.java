@@ -184,6 +184,10 @@ public final class SmearglesPixelArtManager {
         return activeSession.register(player) ? JoinResult.JOINED : JoinResult.ALREADY_JOINED;
     }
 
+    boolean shouldBlockChat(UUID playerId) {
+        return SmeargleChatGate.shouldBlock(activeRound != null, activeSession == null ? Set.of() : activeSession.registeredPlayerIds, playerId);
+    }
+
     public ForceStartResult forceStartRegistration(MinecraftServer server) {
         if (activeSession == null || !activeSession.registrationOpen()) {
             return ForceStartResult.NO_REGISTRATION_ACTIVE;

@@ -13,6 +13,9 @@
       "com.adainish.smearglespixelart.SmearglesPixelArtMod"
     ]
   },
+  "mixins": [
+    "smearglespixelart.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.17.2",
     "fabric-api": "*",
