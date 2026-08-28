@@ -81,6 +81,7 @@ class SmearglesPixelArtConfigTest {
 
         SmearglesPixelArtConfig config = SmearglesPixelArtConfig.load(path);
 
+        assertEquals("<yellow>First</yellow>", config.angerMessage(0, new FixedRandom(0)));
         assertEquals("<yellow>Second</yellow>", config.angerMessage(1, new FixedRandom(1)));
         assertEquals("<gold>Only frustrated</gold>", config.angerMessage(2, new FixedRandom(0)));
         assertEquals("<red>Only furious</red>", config.angerMessage(99, new FixedRandom(0)));
