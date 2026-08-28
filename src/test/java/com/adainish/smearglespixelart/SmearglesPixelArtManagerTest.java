@@ -13,6 +13,7 @@ class SmearglesPixelArtManagerTest {
     @Test
     void cleanupRunsFasterThanPainting() {
         assertEquals(10, SmeargleCleanupPacing.ticksPerPlacement(20));
+        assertEquals(2, SmeargleCleanupPacing.ticksPerPlacement(5));
         assertEquals(1, SmeargleCleanupPacing.ticksPerPlacement(1));
         assertEquals(1, SmeargleCleanupPacing.ticksPerPlacement(3));
     }
