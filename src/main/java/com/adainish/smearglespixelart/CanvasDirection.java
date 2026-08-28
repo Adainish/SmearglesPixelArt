@@ -71,15 +71,15 @@ public enum CanvasDirection {
         return blockPos.add(-this.facingX, 0, -this.facingZ);
     }
 
-    public double artistX(BlockPos supportAnchor) {
-        return supportAnchor.getX() + 0.5D;
+    public double artistX(BlockPos pos) {
+        return pos.getX() + 0.5D;
     }
 
     public double artistY(int standingY) {
         return standingY;
     }
 
-    public double artistZ(BlockPos supportAnchor) {
-        return supportAnchor.getZ() + 0.5D;
+    public double artistZ(BlockPos pos) {
+        return pos.getZ() + 0.5D;
     }
 }
