@@ -141,9 +141,9 @@ public final class SmearglesPixelArtConfig {
 
         private List<String> messagesForStage(int stage) {
             return switch (Math.max(1, Math.min(SmeargleAngerMeter.MAX_STAGE, stage))) {
-                case 1 -> List.copyOf(annoyed);
-                case 2 -> List.copyOf(frustrated);
-                default -> List.copyOf(furious);
+                case 1 -> List.copyOf(normalizeList(annoyed, DEFAULT_ANNOYED_MESSAGES));
+                case 2 -> List.copyOf(normalizeList(frustrated, DEFAULT_FRUSTRATED_MESSAGES));
+                default -> List.copyOf(normalizeList(furious, DEFAULT_FURIOUS_MESSAGES));
             };
         }
 
