@@ -126,6 +126,23 @@ public final class SmearglesPixelArtCommands {
                     return 1;
                 })
             )
+            .then(CommandManager.literal("force-start")
+                .executes(context -> switch (SmearglesPixelArtMod.getManager().forceStartRegistration(context.getSource().getServer())) {
+                    case STARTED -> 1;
+                    case NO_REGISTRATION_ACTIVE -> {
+                        context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>No registration is currently active.</red>"));
+                        yield 0;
+                    }
+                    case NO_REGISTERED_PLAYERS -> {
+                        context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>No players have registered yet.</red>"));
+                        yield 0;
+                    }
+                    case CONFIGURED_DIMENSION_UNAVAILABLE -> {
+                        context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>The configured canvas dimension is unavailable.</red>"));
+                        yield 0;
+                    }
+                })
+            )
             .then(CommandManager.literal("list")
                 .executes(context -> {
                     String available = String.join(", ", SmearglesPixelArtMod.getManager().templateNames());
@@ -208,6 +225,28 @@ public final class SmearglesPixelArtCommands {
                     StringArgumentType.getString(context, "pokemon")
                 ) ? 1 : 0)
             )
+        );
+
+        dispatcher.register(CommandManager.literal("smearglesjoin")
+            .requires(source -> source.getEntity() instanceof net.minecraft.server.network.ServerPlayerEntity)
+            .executes(context -> switch (SmearglesPixelArtMod.getManager().joinRegistration(context.getSource().getPlayerOrThrow())) {
+                case JOINED -> {
+                    context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<green>You joined the Smeargle session.</green>"), false);
+                    yield 1;
+                }
+                case ALREADY_JOINED -> {
+                    context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<gray>You are already registered.</gray>"), false);
+                    yield 0;
+                }
+                case NO_REGISTRATION_ACTIVE -> {
+                    context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>There is no active registration window.</red>"));
+                    yield 0;
+                }
+                case REGISTRATION_CLOSED -> {
+                    context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>Registration has already closed.</red>"));
+                    yield 0;
+                }
+            })
         );
     }
 }

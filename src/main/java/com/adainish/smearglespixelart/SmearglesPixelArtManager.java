@@ -33,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SmearglesPixelArtManager {
     static final int CLEANUP_DELAY_TICKS = 20 * 5;
+    static final int REGISTRATION_DURATION_TICKS = 20 * 60 * 10;
     private static final String SMEARGLE_PROPERTIES = "species=smeargle level=50";
     private static final BlockState SMEARGLE_SUPPORT_BLOCK = Blocks.SCAFFOLDING.getDefaultState();
 
@@ -61,11 +62,20 @@ public final class SmearglesPixelArtManager {
     }
 
     public boolean hasActiveRound() {
-        return activeRound != null;
+        return activeRound != null || activeSession != null;
     }
 
     public Text describeStatus(MinecraftServer server) {
         ConfiguredCanvas configuredCanvas = configuredCanvas(server);
+        if (activeRound == null && activeSession != null && activeSession.registrationOpen()) {
+            int registrationSeconds = activeSession.registrationTicksRemaining() / 20;
+            return MiniMessageText.deserialize(
+                server,
+                "<gold>Registration is open.</gold> <gray>Time remaining:</gray> <yellow>" + registrationSeconds + "</yellow> <gray>seconds.</gray> "
+                    + "<gray>Registered players:</gray> <yellow>" + activeSession.registeredPlayerCount() + "</yellow>. "
+                    + "<gray>Use</gray> <yellow>/smearglesjoin</yellow> <gray>to join.</gray>"
+            );
+        }
         if (activeRound == null) {
             if (configuredCanvas == null) {
                 return MiniMessageText.deserialize(
@@ -111,7 +121,7 @@ public final class SmearglesPixelArtManager {
         if (rounds < 1) {
             return StartResult.INVALID_ROUND_COUNT;
         }
-        if (activeRound != null) {
+        if (activeRound != null || activeSession != null) {
             return StartResult.ROUND_ALREADY_ACTIVE;
         }
         ConfiguredCanvas configuredCanvas = configuredCanvas(server);
@@ -120,7 +130,12 @@ public final class SmearglesPixelArtManager {
         }
 
         activeSession = ActiveSession.random(rounds);
-        return startNextRound(configuredCanvas);
+        broadcast(
+            configuredCanvas.world().getServer(),
+            "<aqua><bold>Smeargle session queued!</bold></aqua> <gray>Registration is open for</gray> <yellow>10 minutes</yellow><gray>.</gray> "
+                + "<gray>Use</gray> <yellow>/smearglesjoin</yellow> <gray>to participate.</gray>"
+        );
+        return StartResult.STARTED;
     }
 
     public StartResult startTemplate(MinecraftServer server, String templateName) {
@@ -131,7 +146,7 @@ public final class SmearglesPixelArtManager {
         if (rounds < 1) {
             return StartResult.INVALID_ROUND_COUNT;
         }
-        if (activeRound != null) {
+        if (activeRound != null || activeSession != null) {
             return StartResult.ROUND_ALREADY_ACTIVE;
         }
         ConfiguredCanvas configuredCanvas = configuredCanvas(server);
@@ -145,7 +160,32 @@ public final class SmearglesPixelArtManager {
         }
 
         activeSession = ActiveSession.template(rounds, template.orElseThrow());
-        return startNextRound(configuredCanvas);
+        broadcast(
+            configuredCanvas.world().getServer(),
+            "<aqua><bold>Smeargle session queued!</bold></aqua> <gray>Registration is open for</gray> <yellow>10 minutes</yellow><gray>.</gray> "
+                + "<gray>Use</gray> <yellow>/smearglesjoin</yellow> <gray>to participate.</gray>"
+        );
+        return StartResult.STARTED;
+    }
+
+    public JoinResult joinRegistration(ServerPlayerEntity player) {
+        if (activeSession == null) {
+            return JoinResult.NO_REGISTRATION_ACTIVE;
+        }
+        if (!activeSession.registrationOpen()) {
+            return JoinResult.REGISTRATION_CLOSED;
+        }
+        return activeSession.register(player) ? JoinResult.JOINED : JoinResult.ALREADY_JOINED;
+    }
+
+    public ForceStartResult forceStartRegistration(MinecraftServer server) {
+        if (activeSession == null || !activeSession.registrationOpen()) {
+            return ForceStartResult.NO_REGISTRATION_ACTIVE;
+        }
+        if (!activeSession.hasRegisteredPlayers()) {
+            return ForceStartResult.NO_REGISTERED_PLAYERS;
+        }
+        return startRegisteredSession(server, true) ? ForceStartResult.STARTED : ForceStartResult.CONFIGURED_DIMENSION_UNAVAILABLE;
     }
 
     public RecordedTemplate recordTemplate(ServerWorld world, String templateName, String pokemon, BlockPos first, BlockPos second) throws IOException {
@@ -163,6 +203,10 @@ public final class SmearglesPixelArtManager {
     public boolean guess(ServerPlayerEntity player, String guess) {
         if (activeRound == null) {
             player.sendMessage(MiniMessageText.deserialize(player.getServer(), "<gray>There is no active pixel-art round to guess right now.</gray>"), false);
+            return false;
+        }
+        if (activeSession != null && !activeSession.isRegistered(player.getUuid())) {
+            player.sendMessage(MiniMessageText.deserialize(player.getServer(), "<red>You must register first with</red> <yellow>/smearglesjoin</yellow><red>.</red>"), false);
             return false;
         }
         if (activeRound.phase == RoundPhase.WAITING_TO_CLEAR || activeRound.phase == RoundPhase.CLEARING) {
@@ -205,10 +249,12 @@ public final class SmearglesPixelArtManager {
                 + "<gray>guessed</gray> <gold>" + MiniMessageText.escape(activeRound.template.pokemon()) + "</gold> <gray>correctly for</gray> "
                 + "<gold>" + points + "</gold> <gray>point" + (points == 1 ? "" : "s") + " (total: " + totalPoints + ").</gray>"
         );
+        beginCleanup(player.getServer());
         return true;
     }
 
     public void tick(MinecraftServer server) {
+        tickRegistration(server);
         if (activeRound == null) {
             return;
         }
@@ -301,14 +347,16 @@ public final class SmearglesPixelArtManager {
     }
 
     public void stop(MinecraftServer server, String message) {
-        if (activeRound == null) {
+        if (activeRound == null && activeSession == null) {
             return;
         }
 
-        clearActiveCanvas(server);
-        clearTemporarySupport(server);
-        despawnSmeargle(server);
         boolean cancelledSession = activeSession != null;
+        if (activeRound != null) {
+            clearActiveCanvas(server);
+            clearTemporarySupport(server);
+            despawnSmeargle(server);
+        }
         activeRound = null;
         activeSession = null;
         broadcast(server, message);
@@ -367,6 +415,51 @@ public final class SmearglesPixelArtManager {
         broadcast(world.getServer(), "<gray>Scoring:</gray> <gold>10</gold><gray> points for first correct, down to a minimum of </gray><gold>1</gold><gray>.</gray>");
         broadcast(world.getServer(), PokemonHintFormatter.lengthHint(template));
         return StartResult.STARTED;
+    }
+
+    private void tickRegistration(MinecraftServer server) {
+        if (activeSession == null || !activeSession.registrationOpen()) {
+            return;
+        }
+        if (activeSession.registrationTicksRemaining() > 0) {
+            activeSession.tickRegistration();
+            if (activeSession.registrationTicksRemaining() > 0) {
+                return;
+            }
+        }
+        if (!activeSession.hasRegisteredPlayers()) {
+            broadcast(server, "<gray>Smeargle registration ended with no participants, so the session was cancelled.</gray>");
+            activeSession = null;
+            return;
+        }
+        startRegisteredSession(server, false);
+    }
+
+    private boolean startRegisteredSession(MinecraftServer server, boolean forced) {
+        if (activeSession == null) {
+            return false;
+        }
+        ConfiguredCanvas configuredCanvas = configuredCanvas(server);
+        if (configuredCanvas == null) {
+            broadcast(server, "<red>The configured canvas dimension is unavailable. Session cancelled.</red>");
+            activeSession = null;
+            return false;
+        }
+        int registeredPlayers = activeSession.registeredPlayerCount();
+        activeSession.closeRegistration();
+        broadcast(
+            server,
+            forced
+                ? "<yellow>An admin force-started the session with</yellow> <gold>" + registeredPlayers + "</gold> <yellow>registered player(s).</yellow>"
+                : "<green>Registration closed with</green> <gold>" + registeredPlayers + "</gold> <green>player(s). Starting now!</green>"
+        );
+        StartResult result = startNextRound(configuredCanvas);
+        if (result != StartResult.STARTED) {
+            broadcast(server, "<red>Unable to start the round after registration.</red>");
+            activeSession = null;
+            return false;
+        }
+        return true;
     }
 
     private void finishRound(MinecraftServer server, boolean silent) {
@@ -817,6 +910,9 @@ public final class SmearglesPixelArtManager {
         private final PixelArtTemplate firstTemplate;
         private boolean firstTemplatePending;
         private int roundsStarted;
+        private boolean registrationOpen = true;
+        private int registrationTicksRemaining = REGISTRATION_DURATION_TICKS;
+        private final Set<UUID> registeredPlayerIds = new HashSet<>();
         private final Map<UUID, Integer> pointsByPlayerId = new HashMap<>();
         private final Map<UUID, String> namesByPlayerId = new HashMap<>();
 
@@ -839,6 +935,15 @@ public final class SmearglesPixelArtManager {
             return roundsStarted;
         }
 
+        private boolean register(ServerPlayerEntity player) {
+            UUID playerId = player.getUuid();
+            if (!registeredPlayerIds.add(playerId)) {
+                return false;
+            }
+            namesByPlayerId.put(playerId, player.getName().getString());
+            return true;
+        }
+
         private PixelArtTemplate nextTemplate(PixelArtTemplateRegistry templates, Random random) {
             if (firstTemplatePending && firstTemplate != null) {
                 firstTemplatePending = false;
@@ -853,6 +958,37 @@ public final class SmearglesPixelArtManager {
 
         private boolean hasMoreRounds() {
             return roundsStarted < totalRounds;
+        }
+
+        private boolean registrationOpen() {
+            return registrationOpen;
+        }
+
+        private int registrationTicksRemaining() {
+            return registrationTicksRemaining;
+        }
+
+        private void tickRegistration() {
+            if (registrationTicksRemaining > 0) {
+                registrationTicksRemaining--;
+            }
+        }
+
+        private boolean hasRegisteredPlayers() {
+            return !registeredPlayerIds.isEmpty();
+        }
+
+        private int registeredPlayerCount() {
+            return registeredPlayerIds.size();
+        }
+
+        private boolean isRegistered(UUID playerId) {
+            return registeredPlayerIds.contains(playerId);
+        }
+
+        private void closeRegistration() {
+            registrationOpen = false;
+            registrationTicksRemaining = 0;
         }
 
         private void award(ServerPlayerEntity player, int points) {
@@ -896,6 +1032,20 @@ public final class SmearglesPixelArtManager {
         TEMPLATE_NOT_FOUND,
         CONFIGURED_DIMENSION_UNAVAILABLE,
         INVALID_ROUND_COUNT
+    }
+
+    public enum JoinResult {
+        JOINED,
+        ALREADY_JOINED,
+        NO_REGISTRATION_ACTIVE,
+        REGISTRATION_CLOSED
+    }
+
+    public enum ForceStartResult {
+        STARTED,
+        NO_REGISTRATION_ACTIVE,
+        NO_REGISTERED_PLAYERS,
+        CONFIGURED_DIMENSION_UNAVAILABLE
     }
 
     private record ConfiguredCanvas(ServerWorld world, String dimensionId, CanvasDirection direction, BlockPos origin, int ticksPerPlacement) {

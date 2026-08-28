@@ -13,6 +13,11 @@ class SmearglesPixelArtManagerTest {
     }
 
     @Test
+    void usesTenMinuteRegistrationWindow() {
+        assertEquals(20 * 60 * 10, SmearglesPixelArtManager.REGISTRATION_DURATION_TICKS);
+    }
+
+    @Test
     void cleanupRunsFasterThanPainting() {
         assertEquals(10, SmeargleCleanupPacing.ticksPerPlacement(20));
         assertEquals(2, SmeargleCleanupPacing.ticksPerPlacement(5));
