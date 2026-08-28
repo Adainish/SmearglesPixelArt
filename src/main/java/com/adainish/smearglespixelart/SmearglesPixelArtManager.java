@@ -15,6 +15,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
@@ -354,6 +355,9 @@ public final class SmearglesPixelArtManager {
             entity.setCustomName(Text.literal("Smeargle"));
             entity.setCustomNameVisible(true);
             entity.setInvulnerable(true);
+            if (entity instanceof MobEntity mobEntity) {
+                mobEntity.setAiDisabled(true);
+            }
             BlockPos supportAnchor = direction.supportAnchor(origin);
             entity.refreshPositionAndAngles(
                 direction.artistX(supportAnchor),

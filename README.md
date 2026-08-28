@@ -133,6 +133,7 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 - Slower painting can be achieved by increasing `ticksPerPlacement`.
 - Supported directions include cardinals and diagonals such as `north`, `east`, `southwest`, and `northwest`.
 - Smeargle now paints from the front of the canvas, repositions before climbing temporary scaffolding upward one step at a time for taller sections, climbs back down when needed, and removes that support without dropping items.
+- Smeargle's native mob AI is disabled during rounds so he only moves when the event logic tells him to.
 
 ### Built-in templates
 
