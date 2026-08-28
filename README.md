@@ -100,6 +100,12 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 
 - `/guess <pokemon>` submits a guess for the active round.
 
+### Round hints
+
+- Each round starts with a name-length hint.
+- Additional MiniMessage hints are broadcast as Smeargle reveals more of the sprite.
+- Later hints reveal the first letter and then a simple name pattern.
+
 ### Permissions
 
 - Admin commands use the LuckPerms-compatible Fabric permissions API instead of operator levels.

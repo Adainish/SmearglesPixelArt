@@ -3,6 +3,8 @@ package com.adainish.smearglespixelart;
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
@@ -28,6 +30,7 @@ public final class SmearglesPixelArtManager {
     private final PixelArtTemplateRegistry templates;
     private final Path templateDirectory;
     private final Random random = new Random();
+    private final Map<CanvasKey, CanvasFootprint> canvasFootprints = new HashMap<>();
     @Nullable
     private ActiveRound activeRound;
 
@@ -149,6 +152,16 @@ public final class SmearglesPixelArtManager {
                     + activeRound.revealOrder.size() + "</yellow> blocks.</gray>"
             );
         }
+
+        int total = activeRound.revealOrder.size();
+        if (!activeRound.firstLetterHintSent && activeRound.nextPlacementIndex * 3 >= total) {
+            activeRound.firstLetterHintSent = true;
+            broadcast(server, PokemonHintFormatter.firstLetterHint(activeRound.template));
+        }
+        if (!activeRound.silhouetteHintSent && activeRound.nextPlacementIndex * 3 >= total * 2) {
+            activeRound.silhouetteHintSent = true;
+            broadcast(server, PokemonHintFormatter.silhouetteHint(activeRound.template));
+        }
     }
 
     public void stop(MinecraftServer server, String message) {
@@ -166,8 +179,16 @@ public final class SmearglesPixelArtManager {
             return false;
         }
 
-        clearCanvas(world, origin, template);
-        activeRound = new ActiveRound(world, origin.toImmutable(), template);
+        BlockPos canvasOrigin = origin.toImmutable();
+        CanvasKey canvasKey = new CanvasKey(world.getRegistryKey(), canvasOrigin);
+        CanvasFootprint nextFootprint = CanvasFootprint.of(template);
+        CanvasFootprint clearFootprint = Optional.ofNullable(canvasFootprints.get(canvasKey))
+            .map(existing -> existing.covering(nextFootprint))
+            .orElse(nextFootprint);
+
+        clearCanvas(world, canvasOrigin, clearFootprint);
+        canvasFootprints.put(canvasKey, nextFootprint);
+        activeRound = new ActiveRound(world, canvasOrigin, template);
         activeRound.artistEntityId = spawnSmeargle(world, origin);
 
         broadcast(
@@ -175,6 +196,7 @@ public final class SmearglesPixelArtManager {
             "<aqua><bold>Smeargle has started a new painting!</bold></aqua> "
                 + "<gray>Use</gray> <yellow>/guess &lt;pokemon&gt;</yellow> <gray>to answer first.</gray>"
         );
+        broadcast(world.getServer(), PokemonHintFormatter.lengthHint(template));
         return true;
     }
 
@@ -186,10 +208,10 @@ public final class SmearglesPixelArtManager {
         }
     }
 
-    private void clearCanvas(ServerWorld world, BlockPos origin, PixelArtTemplate template) {
-        for (int x = template.minX(); x <= template.maxX(); x++) {
-            for (int y = template.minY(); y <= template.maxY(); y++) {
-                for (int z = template.minZ(); z <= template.maxZ(); z++) {
+    private void clearCanvas(ServerWorld world, BlockPos origin, CanvasFootprint footprint) {
+        for (int x = 0; x <= footprint.maxX(); x++) {
+            for (int y = 0; y <= footprint.maxY(); y++) {
+                for (int z = 0; z <= footprint.maxZ(); z++) {
                     world.setBlockState(origin.add(x, y, z), Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
                 }
             }
@@ -278,6 +300,8 @@ public final class SmearglesPixelArtManager {
         private final java.util.List<PixelArtTemplate.BlockPlacement> revealOrder;
         private int nextPlacementIndex;
         private int cooldownTicks;
+        private boolean firstLetterHintSent;
+        private boolean silhouetteHintSent;
         @Nullable
         private UUID artistEntityId;
 
@@ -291,5 +315,8 @@ public final class SmearglesPixelArtManager {
     }
 
     public record RecordedTemplate(String templateName, String pokemon, int width, int height, Path path) {
+    }
+
+    private record CanvasKey(RegistryKey<World> worldKey, BlockPos origin) {
     }
 }
