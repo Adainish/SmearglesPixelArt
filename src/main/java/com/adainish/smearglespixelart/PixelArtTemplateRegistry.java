@@ -37,7 +37,7 @@ public final class PixelArtTemplateRegistry {
     public static PixelArtTemplateRegistry loadBuiltins() {
         Map<String, PixelArtTemplate> loaded = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : BUILTIN_TEMPLATE_PATHS.entrySet()) {
-            loaded.put(entry.getKey(), load(entry.getValue()));
+            loaded.put(GuessNormalizer.normalize(entry.getKey()), load(entry.getValue()));
         }
         return new PixelArtTemplateRegistry(loaded);
     }
@@ -63,10 +63,14 @@ public final class PixelArtTemplateRegistry {
         try (var paths = Files.list(directory)) {
             for (Path path : paths.filter(file -> file.getFileName().toString().endsWith(".json")).sorted().toList()) {
                 String fileName = path.getFileName().toString();
-                String templateName = fileName.substring(0, fileName.length() - ".json".length());
+                String templateName = GuessNormalizer.normalize(fileName.substring(0, fileName.length() - ".json".length()));
+                if (templateName.isEmpty()) {
+                    SmearglesPixelArtMod.LOGGER.warn("Skipping custom template file with invalid name {}", path);
+                    continue;
+                }
                 try {
-                    put(templateName, load(path));
-                } catch (IllegalStateException exception) {
+                    putNormalized(templateName, load(path));
+                } catch (RuntimeException exception) {
                     SmearglesPixelArtMod.LOGGER.warn("Skipping invalid custom template file {}", path, exception);
                 }
             }
@@ -91,12 +95,12 @@ public final class PixelArtTemplateRegistry {
             PRETTY_GSON.toJson(json, writer);
         }
 
-        put(normalizedTemplateName, expand(json, target.toString()));
+        putNormalized(normalizedTemplateName, expand(json, target.toString()));
         return target;
     }
 
-    private void put(String templateName, PixelArtTemplate template) {
-        templates.put(GuessNormalizer.normalize(templateName), template);
+    private void putNormalized(String templateName, PixelArtTemplate template) {
+        templates.put(templateName, template);
     }
 
     private static PixelArtTemplate load(String resourcePath) {
