@@ -105,6 +105,7 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 - Admin commands use the LuckPerms-compatible Fabric permissions API instead of operator levels.
 - Grant access to the admin command set with:
   - `smearglespixelart.admin`
+- Admin commands are denied by default unless a permissions provider such as LuckPerms grants that node.
 
 ### Built-in templates
 
