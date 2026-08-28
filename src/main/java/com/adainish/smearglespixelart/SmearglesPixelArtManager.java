@@ -16,6 +16,9 @@ import java.util.function.Supplier;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.sound.BlockSoundGroup;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.particle.ParticleTypes;
@@ -76,6 +79,7 @@ public final class SmearglesPixelArtManager {
                     + "<gray>Use</gray> <yellow>/smearglesjoin</yellow> <gray>to join.</gray>"
             );
         }
+
         if (activeRound == null) {
             if (configuredCanvas == null) {
                 return MiniMessageText.deserialize(
@@ -249,6 +253,7 @@ public final class SmearglesPixelArtManager {
                 + "<gray>guessed</gray> <gold>" + MiniMessageText.escape(activeRound.template.pokemon()) + "</gold> <gray>correctly for</gray> "
                 + "<gold>" + points + "</gold> <gray>point" + (points == 1 ? "" : "s") + " (total: " + totalPoints + ").</gray>"
         );
+        playRoundSound(player.getServer(), activeRound.origin, SmeargleMinigameSounds.correctGuess());
         beginCleanup(player.getServer());
         return true;
     }
@@ -414,6 +419,7 @@ public final class SmearglesPixelArtManager {
         );
         broadcast(world.getServer(), "<gray>Scoring:</gray> <gold>10</gold><gray> points for first correct, down to a minimum of </gray><gold>1</gold><gray>.</gray>");
         broadcast(world.getServer(), PokemonHintFormatter.lengthHint(template));
+        playSound(world, canvasOrigin, SmeargleMinigameSounds.roundStart());
         return StartResult.STARTED;
     }
 
@@ -558,8 +564,22 @@ public final class SmearglesPixelArtManager {
     }
 
     private void placeBlock(ServerWorld world, BlockPos pos, String blockId) {
+        BlockState currentState = world.getBlockState(pos);
+        if (blockId.equals("minecraft:air")) {
+            if (!currentState.isAir()) {
+                world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
+                BlockSoundGroup soundGroup = currentState.getSoundGroup();
+                playSound(world, pos, soundGroup.getBreakSound(), SoundCategory.BLOCKS, soundGroup.getVolume() * 0.8F, soundGroup.getPitch() * 0.8F);
+            }
+            return;
+        }
+
         BlockState state = resolveBlockState(blockId);
         world.setBlockState(pos, state, Block.NOTIFY_ALL);
+        if (!state.isAir()) {
+            BlockSoundGroup soundGroup = state.getSoundGroup();
+            playSound(world, pos, soundGroup.getPlaceSound(), SoundCategory.BLOCKS, soundGroup.getVolume(), soundGroup.getPitch());
+        }
     }
 
     private BlockState resolveBlockState(String blockId) {
@@ -655,6 +675,10 @@ public final class SmearglesPixelArtManager {
         activeRound.frustrationStepIndex = 0;
         activeRound.audienceYaw = audienceYaw(world);
         activeRound.cooldownTicks = 0;
+        BlockPos soundPos = artistSoundPos();
+        if (soundPos != null) {
+            playSound(world, soundPos, SmeargleMinigameSounds.angerReaction(nextStage));
+        }
     }
 
     private void tickAngerReaction(ServerWorld world) {
@@ -724,6 +748,14 @@ public final class SmearglesPixelArtManager {
             activeRound.direction.yaw(),
             0.0F
         );
+    }
+
+    @Nullable
+    private BlockPos artistSoundPos() {
+        if (activeRound == null || activeRound.currentSupportAnchor == null) {
+            return null;
+        }
+        return new BlockPos(activeRound.currentSupportAnchor.getX(), activeRound.currentStandingY, activeRound.currentSupportAnchor.getZ());
     }
 
     private float audienceYaw(ServerWorld world) {
@@ -820,6 +852,33 @@ public final class SmearglesPixelArtManager {
 
     private void broadcast(MinecraftServer server, String message) {
         server.getPlayerManager().broadcast(MiniMessageText.deserialize(server, message), false);
+    }
+
+    private void playRoundSound(MinecraftServer server, BlockPos pos, SmeargleMinigameSounds.SoundCue cue) {
+        if (activeRound == null) {
+            return;
+        }
+
+        ServerWorld world = server.getWorld(activeRound.worldKey);
+        if (world == null) {
+            return;
+        }
+        playSound(world, pos, cue);
+    }
+
+    private void playSound(ServerWorld world, BlockPos pos, SmeargleMinigameSounds.SoundCue cue) {
+        Identifier identifier = Identifier.tryParse(cue.soundId());
+        if (identifier == null) {
+            return;
+        }
+        Registries.SOUND_EVENT.getOrEmpty(identifier).ifPresentOrElse(
+            sound -> playSound(world, pos, sound, cue.category(), cue.volume(), cue.pitch()),
+            () -> SmearglesPixelArtMod.LOGGER.warn("Unknown Smeargle minigame sound id {}", cue.soundId())
+        );
+    }
+
+    private void playSound(ServerWorld world, BlockPos pos, SoundEvent sound, SoundCategory category, float volume, float pitch) {
+        world.playSound(null, pos, sound, category, volume, pitch);
     }
 
     private void clearActiveCanvas(MinecraftServer server) {

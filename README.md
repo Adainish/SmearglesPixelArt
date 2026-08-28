@@ -109,6 +109,7 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 - Each round starts with a name-length hint.
 - Additional MiniMessage hints are broadcast as Smeargle reveals more of the sprite.
 - Later hints reveal the first letter and then a simple name pattern.
+- Painting and cleanup now use the placed blocks' own sounds, while round starts, correct guesses, and anger spikes play extra audio cues.
 - As the painting gets closer to completion, Smeargle's anger rises in quarter-step stages.
 - At each anger spike he now builds back down first if he is elevated, lingers much longer between phases, walks forward toward the audience while facing them, looks back at the art, steps back toward the canvas, then surges forward before resuming work.
 - Higher frustration stages lengthen that animation and add extra jumps plus angry particles.
