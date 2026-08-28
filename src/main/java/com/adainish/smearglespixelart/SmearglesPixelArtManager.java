@@ -20,6 +20,8 @@ import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
@@ -597,6 +599,12 @@ public final class SmearglesPixelArtManager {
             entity.setCustomName(Text.literal("Smeargle"));
             entity.setCustomNameVisible(true);
             entity.setInvulnerable(true);
+            if (entity instanceof LivingEntity livingEntity) {
+                var scaleAttribute = livingEntity.getAttributeInstance(EntityAttributes.GENERIC_SCALE);
+                if (scaleAttribute != null) {
+                    scaleAttribute.setBaseValue(3.2);
+                }
+            }
             if (entity instanceof MobEntity mobEntity) {
                 mobEntity.setAiDisabled(true);
             }
