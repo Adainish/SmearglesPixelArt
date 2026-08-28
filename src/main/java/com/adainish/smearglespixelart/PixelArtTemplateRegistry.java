@@ -1,13 +1,16 @@
 package com.adainish.smearglespixelart;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -19,6 +22,7 @@ import java.util.Random;
 
 public final class PixelArtTemplateRegistry {
     private static final Gson GSON = new Gson();
+    private static final Gson PRETTY_GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Map<String, String> BUILTIN_TEMPLATE_PATHS = Map.of(
         "pikachu", "assets/smearglespixelart/templates/pikachu.json",
         "voltorb", "assets/smearglespixelart/templates/voltorb.json"
@@ -27,7 +31,7 @@ public final class PixelArtTemplateRegistry {
     private final Map<String, PixelArtTemplate> templates;
 
     private PixelArtTemplateRegistry(Map<String, PixelArtTemplate> templates) {
-        this.templates = Map.copyOf(templates);
+        this.templates = new LinkedHashMap<>(templates);
     }
 
     public static PixelArtTemplateRegistry loadBuiltins() {
@@ -39,7 +43,7 @@ public final class PixelArtTemplateRegistry {
     }
 
     public Collection<String> templateNames() {
-        return templates.keySet();
+        return List.copyOf(templates.keySet());
     }
 
     public Optional<PixelArtTemplate> find(String templateName) {
@@ -49,6 +53,46 @@ public final class PixelArtTemplateRegistry {
     public PixelArtTemplate randomTemplate(Random random) {
         List<PixelArtTemplate> values = List.copyOf(templates.values());
         return values.get(random.nextInt(values.size()));
+    }
+
+    public void loadCustomTemplates(Path directory) throws IOException {
+        if (!Files.isDirectory(directory)) {
+            return;
+        }
+
+        try (var paths = Files.list(directory)) {
+            for (Path path : paths.filter(file -> file.getFileName().toString().endsWith(".json")).sorted().toList()) {
+                String fileName = path.getFileName().toString();
+                String templateName = fileName.substring(0, fileName.length() - ".json".length());
+                put(templateName, load(path));
+            }
+        }
+    }
+
+    public Path saveCustomTemplate(Path directory, String templateName, SpriteTemplateRecorder.RecordedTemplate template) throws IOException {
+        String normalizedTemplateName = GuessNormalizer.normalize(templateName);
+        if (normalizedTemplateName.isEmpty()) {
+            throw new IllegalArgumentException("Template names must contain letters or numbers.");
+        }
+
+        Files.createDirectories(directory);
+
+        TemplateJson json = new TemplateJson();
+        json.pokemon = template.pokemon();
+        json.palette = template.palette();
+        json.rows = template.rows();
+
+        Path target = directory.resolve(normalizedTemplateName + ".json");
+        try (Writer writer = Files.newBufferedWriter(target, StandardCharsets.UTF_8)) {
+            PRETTY_GSON.toJson(json, writer);
+        }
+
+        put(normalizedTemplateName, expand(json, target.toString()));
+        return target;
+    }
+
+    private void put(String templateName, PixelArtTemplate template) {
+        templates.put(GuessNormalizer.normalize(templateName), template);
     }
 
     private static PixelArtTemplate load(String resourcePath) {
@@ -62,6 +106,15 @@ public final class PixelArtTemplateRegistry {
             return expand(json, resourcePath);
         } catch (IOException | JsonParseException exception) {
             throw new IllegalStateException("Unable to load template resource: " + resourcePath, exception);
+        }
+    }
+
+    private static PixelArtTemplate load(Path path) {
+        try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            TemplateJson json = GSON.fromJson(reader, TemplateJson.class);
+            return expand(json, path.toString());
+        } catch (IOException | JsonParseException exception) {
+            throw new IllegalStateException("Unable to load template file: " + path, exception);
         }
     }
 

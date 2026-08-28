@@ -91,6 +91,7 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 
 - `/smearglespixelart start random <pos>` starts a round with a random built-in template.
 - `/smearglespixelart start template <template> <pos>` starts a round with a specific built-in template.
+- `/smearglespixelart record <template> <from> <to> <pokemon>` records a 2D sprite selection from the world into a reusable template JSON file.
 - `/smearglespixelart list` shows available built-in templates.
 - `/smearglespixelart status` shows current round progress.
 - `/smearglespixelart stop` stops the active round.
@@ -105,3 +106,13 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 - `voltorb`
 
 The block position supplied to the start command is the bottom-left origin of the vertical pixel-art canvas.
+
+### Recording new 2D sprite templates
+
+- Recorded art must be a **single vertical 2D plane**:
+  - either **X changes while Z stays constant**, or
+  - **Z changes while X stays constant**.
+- The recorder reads the selected rectangle from the world and writes a template file to:
+  - `config/smearglespixelart/templates/<template>.json`
+- Air is captured as transparent space in the sprite template.
+- Saved templates are available for future rounds and follow the existing row/palette JSON format.

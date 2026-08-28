@@ -1,6 +1,8 @@
 package com.adainish.smearglespixelart;
 
 import com.cobblemon.mod.common.api.pokemon.PokemonProperties;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
@@ -24,12 +26,14 @@ public final class SmearglesPixelArtManager {
     private static final String SMEARGLE_PROPERTIES = "species=smeargle level=50";
 
     private final PixelArtTemplateRegistry templates;
+    private final Path templateDirectory;
     private final Random random = new Random();
     @Nullable
     private ActiveRound activeRound;
 
-    public SmearglesPixelArtManager(PixelArtTemplateRegistry templates) {
+    public SmearglesPixelArtManager(PixelArtTemplateRegistry templates, Path templateDirectory) {
         this.templates = templates;
+        this.templateDirectory = templateDirectory;
     }
 
     public Iterable<String> templateNames() {
@@ -60,6 +64,19 @@ public final class SmearglesPixelArtManager {
     public boolean startTemplate(ServerWorld world, BlockPos origin, String templateName) {
         Optional<PixelArtTemplate> template = templates.find(templateName);
         return template.filter(value -> start(world, origin, value)).isPresent();
+    }
+
+    public RecordedTemplate recordTemplate(ServerWorld world, String templateName, String pokemon, BlockPos first, BlockPos second) throws IOException {
+        SpriteTemplateRecorder.RecordedTemplate recorded = SpriteTemplateRecorder.capture(world, pokemon, first, second);
+        Path outputPath = templates.saveCustomTemplate(templateDirectory, templateName, recorded);
+        SpriteTemplateRecorder.SpriteSelection selection = SpriteTemplateRecorder.SpriteSelection.between(first, second);
+        return new RecordedTemplate(
+            GuessNormalizer.normalize(templateName),
+            recorded.pokemon(),
+            selection.width(),
+            selection.height(),
+            outputPath
+        );
     }
 
     public boolean guess(ServerPlayerEntity player, String guess) {
@@ -272,5 +289,8 @@ public final class SmearglesPixelArtManager {
             this.revealOrder = template.revealOrder();
             this.cooldownTicks = TICKS_PER_PLACEMENT;
         }
+    }
+
+    public record RecordedTemplate(String templateName, String pokemon, int width, int height, Path path) {
     }
 }
