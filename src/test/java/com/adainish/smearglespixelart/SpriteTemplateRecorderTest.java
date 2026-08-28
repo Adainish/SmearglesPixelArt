@@ -33,11 +33,15 @@ class SpriteTemplateRecorderTest {
     }
 
     @Test
-    void rejectsSelectionsThatAreNotSinglePlaneSprites() {
+    void rejectsThreeDimensionalSelections() {
         assertThrows(
             IllegalArgumentException.class,
             () -> SpriteTemplateRecorder.SpriteSelection.between(new BlockPos(0, 0, 0), new BlockPos(1, 1, 1))
         );
+    }
+
+    @Test
+    void rejectsDegenerateVerticalLineSelections() {
         assertThrows(
             IllegalArgumentException.class,
             () -> SpriteTemplateRecorder.SpriteSelection.between(new BlockPos(0, 0, 0), new BlockPos(0, 5, 0))

@@ -90,9 +90,8 @@ public final class PixelArtTemplateRegistry {
         json.palette = template.palette();
         json.rows = template.rows();
 
-        PixelArtTemplate expanded = expand(json, directory.resolve(normalizedTemplateName + ".json").toString());
-
         Path target = directory.resolve(normalizedTemplateName + ".json");
+        PixelArtTemplate expanded = expand(json, target.toString());
         try (Writer writer = Files.newBufferedWriter(target, StandardCharsets.UTF_8)) {
             PRETTY_GSON.toJson(json, writer);
         }
