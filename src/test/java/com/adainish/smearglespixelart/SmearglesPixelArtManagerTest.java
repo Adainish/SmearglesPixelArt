@@ -43,4 +43,24 @@ class SmearglesPixelArtManagerTest {
         )));
         assertEquals(Set.of("Bob", "Caro"), winners);
     }
+
+    @Test
+    void correctGuessAnnouncementDoesNotRevealAnswer() {
+        String message = GuessAnnouncementFormatter.correctGuessAnnouncement("Alice", 7, 19);
+
+        assertEquals(
+            "<green><bold>Alice</bold></green> <gray>got the answer for</gray> <gold>7</gold> <gray>points (total: 19).</gray>",
+            message
+        );
+    }
+
+    @Test
+    void correctGuessAnnouncementUsesSingularPointWhenNeeded() {
+        String message = GuessAnnouncementFormatter.correctGuessAnnouncement("Alice", 1, 19);
+
+        assertEquals(
+            "<green><bold>Alice</bold></green> <gray>got the answer for</gray> <gold>1</gold> <gray>point (total: 19).</gray>",
+            message
+        );
+    }
 }
