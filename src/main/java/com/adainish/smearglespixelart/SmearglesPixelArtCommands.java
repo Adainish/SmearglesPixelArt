@@ -1,6 +1,7 @@
 package com.adainish.smearglespixelart;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import java.io.IOException;
 import me.lucko.fabric.api.permissions.v0.Permissions;
@@ -21,7 +22,7 @@ public final class SmearglesPixelArtCommands {
                     .executes(context -> switch (SmearglesPixelArtMod.getManager().startRandom(context.getSource().getServer())) {
                         case STARTED -> 1;
                         case ROUND_ALREADY_ACTIVE -> {
-                            context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"), false);
+                            context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"));
                             yield 0;
                         }
                         case CONFIGURED_DIMENSION_UNAVAILABLE -> {
@@ -32,7 +33,35 @@ public final class SmearglesPixelArtCommands {
                             context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>No template was available to start.</red>"));
                             yield 0;
                         }
+                        case INVALID_ROUND_COUNT -> {
+                            context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>Rounds must be at least 1.</red>"));
+                            yield 0;
+                        }
                     })
+                    .then(CommandManager.argument("rounds", IntegerArgumentType.integer(1))
+                        .executes(context -> switch (SmearglesPixelArtMod.getManager().startRandom(
+                            context.getSource().getServer(),
+                            IntegerArgumentType.getInteger(context, "rounds")
+                        )) {
+                            case STARTED -> 1;
+                            case ROUND_ALREADY_ACTIVE -> {
+                                context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"));
+                                yield 0;
+                            }
+                            case CONFIGURED_DIMENSION_UNAVAILABLE -> {
+                                context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>The configured canvas dimension is unavailable.</red>"));
+                                yield 0;
+                            }
+                            case TEMPLATE_NOT_FOUND -> {
+                                context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>No template was available to start.</red>"));
+                                yield 0;
+                            }
+                            case INVALID_ROUND_COUNT -> {
+                                context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>Rounds must be at least 1.</red>"));
+                                yield 0;
+                            }
+                        })
+                    )
                 )
                 .then(CommandManager.literal("template")
                     .then(CommandManager.argument("template", StringArgumentType.word())
@@ -43,18 +72,47 @@ public final class SmearglesPixelArtCommands {
                         )) {
                             case STARTED -> 1;
                             case ROUND_ALREADY_ACTIVE -> {
-                                context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"), false);
+                                context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"));
                                 yield 0;
                             }
                             case TEMPLATE_NOT_FOUND -> {
-                                context.getSource().sendFeedback(() -> MiniMessageText.deserialize(context.getSource().getServer(), "<red>That template was not found.</red>"), false);
+                                context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>That template was not found.</red>"));
                                 yield 0;
                             }
                             case CONFIGURED_DIMENSION_UNAVAILABLE -> {
                                 context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>The configured canvas dimension is unavailable.</red>"));
                                 yield 0;
                             }
+                            case INVALID_ROUND_COUNT -> {
+                                context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>Rounds must be at least 1.</red>"));
+                                yield 0;
+                            }
                         })
+                        .then(CommandManager.argument("rounds", IntegerArgumentType.integer(1))
+                            .executes(context -> switch (SmearglesPixelArtMod.getManager().startTemplate(
+                                context.getSource().getServer(),
+                                StringArgumentType.getString(context, "template"),
+                                IntegerArgumentType.getInteger(context, "rounds")
+                            )) {
+                                case STARTED -> 1;
+                                case ROUND_ALREADY_ACTIVE -> {
+                                    context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>A round is already active.</red>"));
+                                    yield 0;
+                                }
+                                case TEMPLATE_NOT_FOUND -> {
+                                    context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>That template was not found.</red>"));
+                                    yield 0;
+                                }
+                                case CONFIGURED_DIMENSION_UNAVAILABLE -> {
+                                    context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>The configured canvas dimension is unavailable.</red>"));
+                                    yield 0;
+                                }
+                                case INVALID_ROUND_COUNT -> {
+                                    context.getSource().sendError(MiniMessageText.deserialize(context.getSource().getServer(), "<red>Rounds must be at least 1.</red>"));
+                                    yield 0;
+                                }
+                            })
+                        )
                     )
                 )
             )
