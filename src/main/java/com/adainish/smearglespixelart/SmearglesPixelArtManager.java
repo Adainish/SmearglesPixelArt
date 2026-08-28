@@ -79,7 +79,7 @@ public final class SmearglesPixelArtManager {
                 server,
                 "<gold>Registration is open.</gold> <gray>Time remaining:</gray> <yellow>" + registrationSeconds + "</yellow> <gray>seconds.</gray> "
                     + "<gray>Registered players:</gray> <yellow>" + activeSession.registeredPlayerCount() + "</yellow>. "
-                    + "<gray>Use</gray> <yellow>/smearglesjoin</yellow> <gray>to join.</gray>"
+                    + "<gray>Use</gray> <click:run_command:'/smearglesjoin'><yellow>/smearglesjoin</yellow></click> <gray>to join.</gray>"
             );
         }
 
@@ -140,7 +140,7 @@ public final class SmearglesPixelArtManager {
         broadcast(
             configuredCanvas.world().getServer(),
             "<aqua><bold>Smeargle session queued!</bold></aqua> <gray>Registration is open for</gray> <yellow>10 minutes</yellow><gray>.</gray> "
-                + "<gray>Use</gray> <yellow>/smearglesjoin</yellow> <gray>to participate.</gray>"
+                + "<gray>Use</gray> <click:run_command:'/smearglesjoin'><yellow>/smearglesjoin</yellow></click> <gray>to participate.</gray>"
         );
         return StartResult.STARTED;
     }
@@ -170,7 +170,7 @@ public final class SmearglesPixelArtManager {
         broadcast(
             configuredCanvas.world().getServer(),
             "<aqua><bold>Smeargle session queued!</bold></aqua> <gray>Registration is open for</gray> <yellow>10 minutes</yellow><gray>.</gray> "
-                + "<gray>Use</gray> <yellow>/smearglesjoin</yellow> <gray>to participate.</gray>"
+                + "<gray>Use</gray> <click:run_command:'/smearglesjoin'><yellow>/smearglesjoin</yellow></click> <gray>to participate.</gray>"
         );
         return StartResult.STARTED;
     }
