@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "smearglespixelart",
+  "version": "${version}",
+  "name": "Smeargle's Mystery Pixel Art",
+  "description": "A Cobblemon guessing sidemod where Smeargle progressively paints a Pokémon for players to identify.",
+  "authors": [
+    "Adainish"
+  ],
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "com.adainish.smearglespixelart.SmearglesPixelArtMod"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.17.2",
+    "fabric-api": "*",
+    "fabric-permissions-api-v0": "*",
+    "minecraft": "~1.21.1",
+    "cobblemon": ">=1.7.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "pokemon": "Pikachu",
+  "palette": {
+    "b": "minecraft:black_concrete",
+    "y": "minecraft:yellow_concrete",
+    "w": "minecraft:white_concrete",
+    "r": "minecraft:red_concrete"
+  },
+  "rows": [
+    "..bb..bb",
+    ".byyyyb.",
+    "byyyyyyb",
+    "bybwwbyb",
+    "byyyyyyb",
+    ".byrryb.",
+    "..byyb..",
+    "...bb..."
+  ]
+}
