@@ -15,7 +15,7 @@ public final class SmearglesPixelArtCommands {
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher, net.minecraft.command.CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
         dispatcher.register(CommandManager.literal("smearglespixelart")
-            .requires(Permissions.require(PermissionNodes.ADMIN))
+            .requires(Permissions.require(PermissionNodes.ADMIN, false))
             .then(CommandManager.literal("start")
                 .then(CommandManager.literal("random")
                     .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
