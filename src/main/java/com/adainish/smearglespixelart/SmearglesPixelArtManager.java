@@ -675,6 +675,7 @@ public final class SmearglesPixelArtManager {
         activeRound.frustrationStepIndex = 0;
         activeRound.audienceYaw = audienceYaw(world);
         activeRound.cooldownTicks = 0;
+        broadcast(world.getServer(), configSupplier.get().angerMessage(nextStage, random));
         BlockPos soundPos = artistSoundPos();
         if (soundPos != null) {
             playSound(world, soundPos, SmeargleMinigameSounds.angerReaction(nextStage));

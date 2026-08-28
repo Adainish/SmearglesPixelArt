@@ -9,6 +9,9 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.Identifier;
@@ -26,6 +29,7 @@ public final class SmearglesPixelArtConfig {
     private String direction = DEFAULT_DIRECTION;
     private CanvasOrigin canvasOrigin = new CanvasOrigin();
     private int ticksPerPlacement = DEFAULT_TICKS_PER_PLACEMENT;
+    private AngerMessages angerMessages = new AngerMessages();
 
     public static SmearglesPixelArtConfig load(Path path) throws IOException {
         Files.createDirectories(path.getParent());
@@ -80,6 +84,14 @@ public final class SmearglesPixelArtConfig {
         return Math.max(1, this.ticksPerPlacement);
     }
 
+    public String angerMessage(int stage, Random random) {
+        return angerMessages.messageForStage(stage, random);
+    }
+
+    List<String> angerMessagesForStage(int stage) {
+        return angerMessages.messagesForStage(stage);
+    }
+
     private void normalize() {
         if (Identifier.tryParse(this.dimension) == null) {
             this.dimension = DEFAULT_DIMENSION;
@@ -89,11 +101,73 @@ public final class SmearglesPixelArtConfig {
             this.canvasOrigin = new CanvasOrigin();
         }
         this.ticksPerPlacement = Math.max(1, this.ticksPerPlacement);
+        if (this.angerMessages == null) {
+            this.angerMessages = new AngerMessages();
+        }
+        this.angerMessages.normalize();
     }
 
     private static final class CanvasOrigin {
         private int x = 0;
         private int y = DEFAULT_CANVAS_Y;
         private int z = 0;
+    }
+
+    private static final class AngerMessages {
+        private static final List<String> DEFAULT_ANNOYED_MESSAGES = List.of(
+            "<yellow>Smeargle huffs and shoots the players a suspicious look.</yellow>",
+            "<yellow>Smeargle taps his tail like he expects better guesses.</yellow>",
+            "<yellow>Smeargle mutters and keeps one eye on the crowd.</yellow>"
+        );
+        private static final List<String> DEFAULT_FRUSTRATED_MESSAGES = List.of(
+            "<gold>Smeargle stomps in place and glares back at the players.</gold>",
+            "<gold>Smeargle grumbles loudly and jabs his tail at the canvas.</gold>",
+            "<gold>Smeargle throws his paws up like the answer should be obvious.</gold>"
+        );
+        private static final List<String> DEFAULT_FURIOUS_MESSAGES = List.of(
+            "<red><bold>Smeargle is furious and demands a better guess right now!</bold></red>",
+            "<red><bold>Smeargle screeches, points at the artwork, and looks ready to explode!</bold></red>",
+            "<red><bold>Smeargle is absolutely livid and kicks off another angry fit!</bold></red>"
+        );
+
+        private List<String> annoyed = new ArrayList<>(DEFAULT_ANNOYED_MESSAGES);
+        private List<String> frustrated = new ArrayList<>(DEFAULT_FRUSTRATED_MESSAGES);
+        private List<String> furious = new ArrayList<>(DEFAULT_FURIOUS_MESSAGES);
+
+        private String messageForStage(int stage, Random random) {
+            List<String> messages = messagesForStage(stage);
+            return messages.get(random.nextInt(messages.size()));
+        }
+
+        private List<String> messagesForStage(int stage) {
+            return switch (Math.max(1, Math.min(SmeargleAngerMeter.MAX_STAGE, stage))) {
+                case 1 -> List.copyOf(normalizeList(annoyed, DEFAULT_ANNOYED_MESSAGES));
+                case 2 -> List.copyOf(normalizeList(frustrated, DEFAULT_FRUSTRATED_MESSAGES));
+                default -> List.copyOf(normalizeList(furious, DEFAULT_FURIOUS_MESSAGES));
+            };
+        }
+
+        private void normalize() {
+            this.annoyed = normalizeList(this.annoyed, DEFAULT_ANNOYED_MESSAGES);
+            this.frustrated = normalizeList(this.frustrated, DEFAULT_FRUSTRATED_MESSAGES);
+            this.furious = normalizeList(this.furious, DEFAULT_FURIOUS_MESSAGES);
+        }
+
+        private static List<String> normalizeList(List<String> source, List<String> defaults) {
+            if (source == null) {
+                return new ArrayList<>(defaults);
+            }
+            List<String> normalized = new ArrayList<>();
+            for (String message : source) {
+                if (message == null) {
+                    continue;
+                }
+                String trimmed = message.trim();
+                if (!trimmed.isEmpty()) {
+                    normalized.add(trimmed);
+                }
+            }
+            return normalized.isEmpty() ? new ArrayList<>(defaults) : normalized;
+        }
     }
 }

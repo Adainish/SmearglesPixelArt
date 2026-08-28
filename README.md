@@ -134,7 +134,8 @@ This repository now contains an initial server-side Fabric sidemod implementatio
   - the target dimension id,
   - the canvas origin,
   - the canvas direction,
-  - the number of ticks Smeargle waits between block placements.
+  - the number of ticks Smeargle waits between block placements,
+  - and the possible MiniMessage chat lines Smeargle can use when he becomes annoyed, frustrated, or furious.
 - Slower painting can be achieved by increasing `ticksPerPlacement`.
 - Supported directions include cardinals and diagonals such as `north`, `east`, `southwest`, and `northwest`.
 - Smeargle now paints from the front of the canvas, repositions before climbing temporary scaffolding upward one step at a time for taller sections, climbs back down when needed, and removes that support without dropping items.
