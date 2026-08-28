@@ -100,6 +100,12 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 
 - `/guess <pokemon>` submits a guess for the active round.
 
+### Permissions
+
+- Admin commands use the LuckPerms-compatible Fabric permissions API instead of operator levels.
+- Grant access to the admin command set with:
+  - `smearglespixelart.admin`
+
 ### Built-in templates
 
 - `pikachu`

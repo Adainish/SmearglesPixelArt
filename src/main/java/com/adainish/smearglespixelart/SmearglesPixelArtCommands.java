@@ -3,6 +3,7 @@ package com.adainish.smearglespixelart;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import java.io.IOException;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -14,7 +15,7 @@ public final class SmearglesPixelArtCommands {
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher, net.minecraft.command.CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
         dispatcher.register(CommandManager.literal("smearglespixelart")
-            .requires(source -> source.hasPermissionLevel(2))
+            .requires(Permissions.require(PermissionNodes.ADMIN))
             .then(CommandManager.literal("start")
                 .then(CommandManager.literal("random")
                     .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())

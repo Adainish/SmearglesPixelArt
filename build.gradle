@@ -29,6 +29,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     modImplementation "com.cobblemon:fabric:${project.cobblemon_version}"
+    include(modImplementation("me.lucko:fabric-permissions-api:0.3.1"))
 
     include(implementation("net.kyori:adventure-text-minimessage:${project.adventure_version}"))
     include(implementation("net.kyori:adventure-text-serializer-gson:${project.adventure_version}"))
