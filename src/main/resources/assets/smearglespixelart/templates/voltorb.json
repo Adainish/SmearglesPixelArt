@@ -1,18 +1,17 @@
 {
-  "pokemon": "Voltorb",
+  "pokemon": "voltorb",
   "palette": {
-    "r": "minecraft:red_concrete",
-    "w": "minecraft:white_concrete",
-    "b": "minecraft:black_concrete"
+    "1": "minecraft:red_wool",
+    "2": "minecraft:black_wool",
+    "3": "minecraft:white_wool"
   },
   "rows": [
-    "..rrrr..",
-    ".rrwwrr.",
-    "rrwwwwrr",
-    "rrwwwwrr",
-    "rrbbbbrr",
-    "rrbbbbrr",
-    ".rrbbrr.",
-    "..bbbb.."
+    ".......",
+    ".11111.",
+    "1121211",
+    "1231321",
+    "1111111",
+    "3333333",
+    "3333333"
   ]
 }
