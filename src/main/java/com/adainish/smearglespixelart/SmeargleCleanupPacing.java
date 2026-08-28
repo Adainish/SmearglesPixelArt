@@ -1,7 +1,7 @@
 package com.adainish.smearglespixelart;
 
 final class SmeargleCleanupPacing {
-    static final int CLEANUP_SPEED_MULTIPLIER = 2;
+    static final int CLEANUP_SPEED_MULTIPLIER = 3;
 
     private SmeargleCleanupPacing() {
     }

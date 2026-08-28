@@ -116,7 +116,7 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 ### Round cleanup
 
 - After a round ends, Smeargle waits 5 seconds before clearing the sprite.
-- Cleanup then happens on the configured canvas faster than the normal painting pace.
+- Cleanup then happens on the configured canvas at roughly 3x the normal painting pace.
 - This delay leaves room for future end-of-round animations before the art is removed.
 
 ### Permissions
