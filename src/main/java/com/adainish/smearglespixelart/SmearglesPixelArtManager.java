@@ -424,7 +424,7 @@ public final class SmearglesPixelArtManager {
         broadcast(
             world.getServer(),
             "<aqua><bold>Round " + roundNumber + "/" + totalRounds + " has started!</bold></aqua> "
-                + "<gray>Use</gray> <yellow>/guess &lt;pokemon&gt;</yellow> <gray>to score points.</gray>"
+                + "<gray>Use</gray> <yellow>/guess <pokemon></yellow> <gray>to score points.</gray>"
         );
         broadcast(world.getServer(), "<gray>Scoring:</gray> <gold>10</gold><gray> points for first correct, down to a minimum of </gray><gold>1</gold><gray>.</gray>");
         broadcast(world.getServer(), PokemonHintFormatter.lengthHint(template));

@@ -26,7 +26,7 @@ public class ChatMessageMixin {
         }
 
         player.sendMessage(
-            MiniMessageText.deserialize(player.getServer(), "<red>Registered Smeargle players cannot use public chat during the event. Use</red> <yellow>/guess &lt;pokemon&gt;</yellow><red>.</red>"),
+            MiniMessageText.deserialize(player.getServer(), "<red>Registered Smeargle players cannot use public chat during the event. Use</red> <yellow>/guess <pokemon></yellow><red>.</red>"),
             false
         );
         ci.cancel();
