@@ -18,8 +18,9 @@ public final class SpriteTemplateRecorder {
     private SpriteTemplateRecorder() {
     }
 
-    public static RecordedTemplate capture(ServerWorld world, String pokemon, BlockPos first, BlockPos second) {
-        return record(pokemon, SpriteSelection.between(first, second), pos -> blockId(world, pos));
+    public static CapturedSprite capture(ServerWorld world, String pokemon, BlockPos first, BlockPos second) {
+        SpriteSelection selection = SpriteSelection.between(first, second);
+        return new CapturedSprite(selection, record(pokemon, selection, pos -> blockId(world, pos)));
     }
 
     static RecordedTemplate record(String pokemon, SpriteSelection selection, BlockLookup lookup) {
@@ -71,6 +72,9 @@ public final class SpriteTemplateRecorder {
     }
 
     public record RecordedTemplate(String pokemon, Map<String, String> palette, List<String> rows) {
+    }
+
+    public record CapturedSprite(SpriteSelection selection, RecordedTemplate template) {
     }
 
     public record SpriteSelection(

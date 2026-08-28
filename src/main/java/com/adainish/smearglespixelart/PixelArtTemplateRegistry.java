@@ -64,7 +64,11 @@ public final class PixelArtTemplateRegistry {
             for (Path path : paths.filter(file -> file.getFileName().toString().endsWith(".json")).sorted().toList()) {
                 String fileName = path.getFileName().toString();
                 String templateName = fileName.substring(0, fileName.length() - ".json".length());
-                put(templateName, load(path));
+                try {
+                    put(templateName, load(path));
+                } catch (IllegalStateException exception) {
+                    SmearglesPixelArtMod.LOGGER.warn("Skipping invalid custom template file {}", path, exception);
+                }
             }
         }
     }

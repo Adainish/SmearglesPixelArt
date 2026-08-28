@@ -67,14 +67,13 @@ public final class SmearglesPixelArtManager {
     }
 
     public RecordedTemplate recordTemplate(ServerWorld world, String templateName, String pokemon, BlockPos first, BlockPos second) throws IOException {
-        SpriteTemplateRecorder.RecordedTemplate recorded = SpriteTemplateRecorder.capture(world, pokemon, first, second);
-        Path outputPath = templates.saveCustomTemplate(templateDirectory, templateName, recorded);
-        SpriteTemplateRecorder.SpriteSelection selection = SpriteTemplateRecorder.SpriteSelection.between(first, second);
+        SpriteTemplateRecorder.CapturedSprite captured = SpriteTemplateRecorder.capture(world, pokemon, first, second);
+        Path outputPath = templates.saveCustomTemplate(templateDirectory, templateName, captured.template());
         return new RecordedTemplate(
             GuessNormalizer.normalize(templateName),
-            recorded.pokemon(),
-            selection.width(),
-            selection.height(),
+            captured.template().pokemon(),
+            captured.selection().width(),
+            captured.selection().height(),
             outputPath
         );
     }
