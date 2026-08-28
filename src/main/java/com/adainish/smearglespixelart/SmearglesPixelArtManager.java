@@ -262,7 +262,7 @@ public final class SmearglesPixelArtManager {
         clearCanvas(world, canvasOrigin, clearFootprint);
         canvasFootprints.put(canvasKey, nextFootprint);
         activeRound = new ActiveRound(world, configuredCanvas.dimensionId(), configuredCanvas.direction(), canvasOrigin, template, configuredCanvas.ticksPerPlacement());
-        activeRound.artistEntityId = spawnSmeargle(world, canvasOrigin);
+        activeRound.artistEntityId = spawnSmeargle(world, configuredCanvas.direction(), canvasOrigin);
 
         broadcast(
             world.getServer(),
@@ -324,17 +324,17 @@ public final class SmearglesPixelArtManager {
     }
 
     @Nullable
-    private UUID spawnSmeargle(ServerWorld world, BlockPos origin) {
+    private UUID spawnSmeargle(ServerWorld world, CanvasDirection direction, BlockPos origin) {
         try {
             Entity entity = PokemonProperties.Companion.parse(SMEARGLE_PROPERTIES).createEntity(world);
             entity.setCustomName(Text.literal("Smeargle"));
             entity.setCustomNameVisible(true);
             entity.setInvulnerable(true);
             entity.refreshPositionAndAngles(
-                activeRound != null ? activeRound.direction.artistX(origin) : origin.getX() + 0.5D,
+                direction.artistX(origin),
                 origin.getY(),
-                activeRound != null ? activeRound.direction.artistZ(origin) : origin.getZ() + 1.5D,
-                activeRound != null ? activeRound.direction.yaw() : 180.0F,
+                direction.artistZ(origin),
+                direction.yaw(),
                 0.0F
             );
             if (world.spawnEntity(entity)) {

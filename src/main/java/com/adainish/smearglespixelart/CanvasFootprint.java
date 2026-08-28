@@ -15,11 +15,14 @@ public record CanvasFootprint(int minX, int maxX, int minY, int maxY, int minZ, 
         int minZ = 0;
         int maxZ = 0;
 
-        for (int x = template.minX(); x <= template.maxX(); x++) {
-            for (int y = template.minY(); y <= template.maxY(); y++) {
-                for (int z = template.minZ(); z <= template.maxZ(); z++) {
-                    PixelArtTemplate.BlockPlacement placement = new PixelArtTemplate.BlockPlacement(x, y, z, "minecraft:air");
-                    var offset = direction.worldOffset(placement);
+        int[] xs = {template.minX(), template.maxX()};
+        int[] ys = {template.minY(), template.maxY()};
+        int[] zs = {template.minZ(), template.maxZ()};
+
+        for (int x : xs) {
+            for (int y : ys) {
+                for (int z : zs) {
+                    var offset = direction.worldOffset(new PixelArtTemplate.BlockPlacement(x, y, z, "minecraft:air"));
                     minX = Math.min(minX, offset.getX());
                     maxX = Math.max(maxX, offset.getX());
                     minY = Math.min(minY, offset.getY());
