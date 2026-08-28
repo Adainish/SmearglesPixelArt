@@ -55,6 +55,10 @@ public enum CanvasDirection {
         return this.yaw;
     }
 
+    public float audienceYaw() {
+        return this.yaw >= 0.0F ? this.yaw - 180.0F : this.yaw + 180.0F;
+    }
+
     public BlockPos worldOffset(PixelArtTemplate.BlockPlacement placement) {
         return new BlockPos(
             this.rightX * placement.x() + this.facingX * placement.z(),
@@ -81,5 +85,21 @@ public enum CanvasDirection {
 
     public double artistZ(BlockPos pos) {
         return pos.getZ() + 0.5D;
+    }
+
+    public double audienceX(BlockPos pos, double distance) {
+        return artistX(pos) + normalizedFacingX() * distance;
+    }
+
+    public double audienceZ(BlockPos pos, double distance) {
+        return artistZ(pos) + normalizedFacingZ() * distance;
+    }
+
+    private double normalizedFacingX() {
+        return this.facingX / Math.sqrt((this.facingX * this.facingX) + (this.facingZ * this.facingZ));
+    }
+
+    private double normalizedFacingZ() {
+        return this.facingZ / Math.sqrt((this.facingX * this.facingX) + (this.facingZ * this.facingZ));
     }
 }

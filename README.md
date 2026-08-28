@@ -107,7 +107,8 @@ This repository now contains an initial server-side Fabric sidemod implementatio
 - Additional MiniMessage hints are broadcast as Smeargle reveals more of the sprite.
 - Later hints reveal the first letter and then a simple name pattern.
 - As the painting gets closer to completion, Smeargle's anger rises in quarter-step stages.
-- At each anger spike he briefly turns toward nearby players before going back to work, and later stages add jumps plus angry particles.
+- At each anger spike he now pauses, walks forward toward the audience while facing them, looks back at the art, steps back toward the canvas, then surges forward before resuming work.
+- Higher frustration stages lengthen that animation and add extra jumps plus angry particles.
 
 ### Round cleanup
 
